@@ -370,7 +370,7 @@ export default function AttendanceCalendar({
                   {rec ? (
                     <div className="space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} />
+                        <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} timeIn={rec.timeIn} timeOut={rec.timeOut} workHours={rec.workHours} />
                         {rec.workHours !== undefined && (
                           <span className="text-[10px] font-mono font-bold text-zinc-700">
                             {rec.workHours}h

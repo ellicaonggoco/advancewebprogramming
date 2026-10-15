@@ -67,8 +67,9 @@ const calculateWorkHours = (timeInStr, timeOutStr) => {
 const calculateLateMinutes = (timeInStr) => {
   const inMins = parseTimeStringToMinutes(timeInStr);
   if (inMins === null) return 0;
+  // Shift standard: 9:00 AM na may 15-minute grace period (hanggang 9:15 AM on-time pa rin)
   const standardStartMinutes = 9 * 60; // 9:00 AM
-  if (inMins > standardStartMinutes + 5) {
+  if (inMins > standardStartMinutes + 15) {
     return inMins - standardStartMinutes;
   }
   return 0;
@@ -874,7 +875,7 @@ export default function Attendance() {
 
                       {/* Clean Refined Status Indicator */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} />
+                        <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} timeIn={rec.timeIn} timeOut={rec.timeOut} workHours={rec.workHours} />
                       </td>
 
                       <td className="py-3 px-4 text-zinc-500 max-w-xs truncate text-xs">

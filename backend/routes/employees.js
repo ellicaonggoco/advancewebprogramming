@@ -35,12 +35,23 @@ router.get('/', authenticate, (req, res) => {
     return a.lastName.localeCompare(b.lastName);
   });
 
+  // Data Privacy: Admin at Manager lang ang may karapatang makakita ng sahod ng lahat ng empleyado
+  const isPrivileged = req.user.role === 'admin' || req.user.role === 'manager';
+  const myEmpId = req.user.employee ? (req.user.employee.id || req.user.employee._id) : null;
+  const sanitizeList = (list) => list.map(emp => {
+    if (isPrivileged || (myEmpId && (emp.id === myEmpId || emp._id === myEmpId))) {
+      return emp;
+    }
+    const { salary, ...rest } = emp;
+    return rest;
+  });
+
   const total = employees.length;
   if (req.query.page || req.query.limit) {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, parseInt(req.query.limit, 10) || 10);
     const startIndex = (page - 1) * limit;
-    const paginatedData = employees.slice(startIndex, startIndex + limit);
+    const paginatedData = sanitizeList(employees.slice(startIndex, startIndex + limit));
 
     return res.json({
       success: true,
@@ -57,7 +68,7 @@ router.get('/', authenticate, (req, res) => {
     success: true,
     total,
     count: employees.length,
-    data: employees
+    data: sanitizeList(employees)
   });
 });
 
@@ -106,8 +117,23 @@ router.post('/', [
   const {
     employeeId, firstName, lastName, email, phone,
     department, position, hireDate, salary, status, shift, avatar,
-    createAccount, username, password
+    createAccount, username, password, role
   } = req.body;
+
+  if (Number(salary) < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Bawal ang negative salary: Valid positive compensation is required.'
+    });
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (hireDate && hireDate > todayStr) {
+    return res.status(400).json({
+      success: false,
+      message: 'Bawal ang future hire date.'
+    });
+  }
 
   let finalEmpId = employeeId && employeeId.trim();
   if (!finalEmpId) {
@@ -156,6 +182,10 @@ router.post('/', [
       });
     }
 
+    // Role Assignment: Tanging Administrator lamang ang may pahintulot mag-create ng kapwa Admin
+    const isReqAdmin = req.user && req.user.role === 'admin';
+    const assignedRole = (role === 'admin' && isReqAdmin) ? 'admin' : (role === 'manager' && isReqAdmin ? 'manager' : 'employee');
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newUserId = `user-${Date.now()}`;
@@ -165,7 +195,7 @@ router.post('/', [
       username: cleanUsername,
       email: email.toLowerCase(),
       password: hashedPassword,
-      role: 'employee',
+      role: assignedRole,
       employee: null,
       status: 'active',
       createdAt: new Date()
@@ -274,20 +304,42 @@ router.put('/:id', [
 // @desc    Delete employee (Admin)
 router.delete('/:id', [authenticate, authorize('admin')], (req, res) => {
   const empId = req.params.id;
+  const myEmpId = req.user.employee ? (req.user.employee.id || req.user.employee._id) : null;
+
+  // Security: Bawal i-delete ng Admin ang sarili niyang account para maiwasan ang lockout
+  if (empId === myEmpId || empId === 'emp-1') {
+    return res.status(403).json({
+      success: false,
+      message: 'Bawal i-delete ang sarili mong administrator account (Self-deletion lockout protection).'
+    });
+  }
+
   const index = store.employees.findIndex(e => e.id === empId || e._id === empId);
 
   if (index === -1) {
     return res.status(404).json({ success: false, message: 'Employee not found' });
   }
 
+  const deletedEmp = store.employees[index];
   store.employees.splice(index, 1);
-  // Clean up associated attendance & leaves
+  // Clean up associated attendance, leaves, and users in memory
   store.attendance = store.attendance.filter(a => a.employee !== empId);
   store.leaves = store.leaves.filter(l => l.employee !== empId);
+  store.users = store.users.filter(u => u.employee !== empId);
+
+  // Sync deletion sa MongoDB Atlas
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    const db = mongoose.connection.db;
+    db.collection('employees').deleteOne({ $or: [{ id: empId }, { _id: empId }, { employeeId: deletedEmp.employeeId }] }).catch(() => {});
+    db.collection('users').deleteMany({ employee: empId }).catch(() => {});
+    db.collection('attendance').deleteMany({ employee: empId }).catch(() => {});
+    db.collection('leaves').deleteMany({ employee: empId }).catch(() => {});
+  }
 
   res.json({
     success: true,
-    message: 'Employee and associated records deleted successfully'
+    message: `Employee ${deletedEmp.employeeId} (${deletedEmp.firstName} ${deletedEmp.lastName}) and associated records deleted successfully.`
   });
 });
 

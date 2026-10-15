@@ -223,8 +223,23 @@ export default function TimeClockWidget({ onClockEvent }) {
 
           {/* Right: Clock Actions */}
           <div className="flex flex-col items-stretch sm:items-end gap-3 w-full md:w-auto">
-            {/* Case 1: Unclocked today */}
-            {!todayRecord?.timeIn ? (
+            {/* Case 0: On Approved Leave Today */}
+            {todayRecord?.status === 'On Leave' ? (
+              <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-sky-950/70 border border-sky-500/40 text-left max-w-sm shadow-xl">
+                <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0 text-sky-300">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs sm:text-sm font-bold text-sky-200">
+                    On Approved Leave Today
+                  </div>
+                  <div className="text-[11px] text-sky-300/80 font-medium mt-0.5">
+                    {todayRecord.notes || 'Official Leave of Absence credited (PTO)'}
+                  </div>
+                </div>
+              </div>
+            ) : !todayRecord?.timeIn ? (
+              /* Case 1: Unclocked today */
               <div className="flex flex-col items-stretch sm:items-end w-full sm:w-auto">
                 <button
                   onClick={() => setConfirmModal({ open: true, type: 'clockIn' })}

@@ -1,13 +1,16 @@
 import React from 'react';
 
-export default function StatusBadge({ status, lateMinutes, size = 'sm' }) {
+// StatusBadge: Dito natin kino-convert ang status code papuntang magandang visual badge na may tamang kulay at label.
+// Tinitingnan din nito kung may time-out na o kasalukuyang 'On Duty' pa ang empleyado para hindi maging misleading
+// (halimbawa: hindi 'Whole Day' agad kung 8:52 AM pa lang nag-time in at wala pang time-out).
+export default function StatusBadge({ status, lateMinutes, timeIn, timeOut, workHours, size = 'sm' }) {
   const configs = {
     Present: {
       dot: 'bg-emerald-500',
       bg: 'bg-emerald-50/70',
       text: 'text-emerald-800',
       border: 'border-emerald-200/60',
-      label: 'Present (Whole Day)',
+      label: 'Present',
     },
     Late: {
       dot: 'bg-amber-500',
@@ -117,12 +120,44 @@ export default function StatusBadge({ status, lateMinutes, size = 'sm' }) {
     label: status,
   };
 
+  let dynamicLabel = config.label;
+  let isPulsing = false;
+
+  // Real-time Shift Logic:
+  // Kapag may timeIn pero WALA PANG timeOut (o '-' pa lang), ibig sabihin kasalukuyan pa siyang naka-duty sa opisina
+  const hasNoTimeOut = !timeOut || timeOut === '-' || timeOut === 'null';
+
+  if (status === 'Present') {
+    if (timeIn && hasNoTimeOut) {
+      dynamicLabel = 'Present (On Duty)';
+      isPulsing = true;
+    } else if (timeOut && !hasNoTimeOut) {
+      dynamicLabel = 'Present (Full Day)';
+    } else {
+      dynamicLabel = 'Present';
+    }
+  } else if (status === 'Late') {
+    if (timeIn && hasNoTimeOut) {
+      dynamicLabel = lateMinutes ? `Late - On Duty (+${lateMinutes}m)` : 'Late (On Duty)';
+      isPulsing = true;
+    } else {
+      dynamicLabel = lateMinutes ? `Late (+${lateMinutes}m)` : 'Late';
+    }
+  }
+
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium tracking-tight border ${config.bg} ${config.text} ${config.border} shadow-[0_1px_2px_rgba(0,0,0,0.02)] whitespace-nowrap select-none`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot} shrink-0`}></span>
-      <span>{config.label}</span>
+      {isPulsing ? (
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+      ) : (
+        <span className={`w-1.5 h-1.5 rounded-full ${config.dot} shrink-0`}></span>
+      )}
+      <span>{dynamicLabel}</span>
     </span>
   );
 }

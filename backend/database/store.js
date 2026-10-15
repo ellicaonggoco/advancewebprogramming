@@ -155,15 +155,16 @@ const generateInitialAttendance = () => {
   const now = new Date();
   const todayStr = formatDate(now);
 
+  // Kasalukuyang naka-duty pa sila ngayong araw (naka-time in pero wala pang time-out kaya workHours: 0 muna habang ongoing ang shift)
   records.push(
-    { id: 'att-1', _id: 'att-1', employee: 'emp-1', date: todayStr, timeIn: '08:45 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Executive morning briefing', location: 'Main Office', createdAt: new Date() },
-    // Naka-time in na rin si John Herzsel Datul ng maaga (on time, within grace period)
-    { id: 'att-2', _id: 'att-2', employee: 'emp-2', date: todayStr, timeIn: '08:52 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Systems architecture review', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-3', _id: 'att-3', employee: 'emp-3', date: todayStr, timeIn: '08:58 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Database replication sync', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-4', _id: 'att-4', employee: 'emp-4', date: todayStr, timeIn: null, timeOut: null, status: 'On Leave', workHours: 0, lateMinutes: 0, method: 'System Auto', notes: 'Approved Sick Leave (Official Leave of Absence)', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-5', _id: 'att-5', employee: 'emp-5', date: todayStr, timeIn: '08:40 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Automated test suite run', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-6', _id: 'att-6', employee: 'emp-6', date: todayStr, timeIn: '08:50 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Personnel morning shift', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-7', _id: 'att-7', employee: 'emp-7', date: todayStr, timeIn: '08:55 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Financial analytics morning shift', location: 'Main Office', createdAt: new Date() }
+    { id: `att-${todayStr}-emp-1`, _id: `att-${todayStr}-emp-1`, employee: 'emp-1', date: todayStr, timeIn: '08:45 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Executive morning briefing', location: 'Main Office', createdAt: new Date() },
+    // Naka-time in si John Herzsel Datul ng maaga (on time, within 15m grace period)
+    { id: `att-${todayStr}-emp-2`, _id: `att-${todayStr}-emp-2`, employee: 'emp-2', date: todayStr, timeIn: '08:52 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Systems architecture review', location: 'Main Office', createdAt: new Date() },
+    { id: `att-${todayStr}-emp-3`, _id: `att-${todayStr}-emp-3`, employee: 'emp-3', date: todayStr, timeIn: '08:58 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Database replication sync', location: 'Main Office', createdAt: new Date() },
+    { id: `att-${todayStr}-emp-4`, _id: `att-${todayStr}-emp-4`, employee: 'emp-4', date: todayStr, timeIn: null, timeOut: null, status: 'On Leave', workHours: 0, lateMinutes: 0, method: 'System Auto', notes: 'Approved Sick Leave (Official Leave of Absence)', location: 'Main Office', createdAt: new Date() },
+    { id: `att-${todayStr}-emp-5`, _id: `att-${todayStr}-emp-5`, employee: 'emp-5', date: todayStr, timeIn: '08:40 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Automated test suite run', location: 'Main Office', createdAt: new Date() },
+    { id: `att-${todayStr}-emp-6`, _id: `att-${todayStr}-emp-6`, employee: 'emp-6', date: todayStr, timeIn: '08:50 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Personnel morning shift', location: 'Main Office', createdAt: new Date() },
+    { id: `att-${todayStr}-emp-7`, _id: `att-${todayStr}-emp-7`, employee: 'emp-7', date: todayStr, timeIn: '08:55 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Financial analytics morning shift', location: 'Main Office', createdAt: new Date() }
   );
 
   let count = 8;

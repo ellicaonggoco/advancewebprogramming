@@ -20,7 +20,7 @@ router.post('/register', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { username, email, password, role, employeeId } = req.body;
+    const { username, email, password, role, employeeId, adminSecretKey } = req.body;
 
     const existingUser = store.users.find(
       u => u.email.toLowerCase() === email.toLowerCase() || u.username.toLowerCase() === username.toLowerCase()
@@ -33,6 +33,22 @@ router.post('/register', [
       });
     }
 
+    // Role Security: Bawal mag-register bilang Admin nang walang authorization
+    let finalRole = 'employee';
+    if (role === 'admin') {
+      const isAuthorizedSecret = adminSecretKey && adminSecretKey === (process.env.ADMIN_SECRET_KEY || 'AttendEaseAdmin2026!');
+      if (isAuthorizedSecret) {
+        finalRole = 'admin';
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Bawal mag-register bilang System Administrator: Kailangan ng authorized Admin Security Passcode para makagawa ng admin account.'
+        });
+      }
+    } else if (role === 'manager') {
+      finalRole = 'manager';
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newId = `user-${Date.now()}`;
@@ -43,13 +59,20 @@ router.post('/register', [
       username,
       email: email.toLowerCase(),
       password: hashedPassword,
-      role: role || 'employee',
+      role: finalRole,
       employee: employeeId || null,
       status: 'active',
       createdAt: new Date()
     };
 
     store.users.push(newUser);
+
+    // I-sync ang bagong user account sa MongoDB Atlas
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      const db = mongoose.connection.db;
+      await db.collection('users').insertOne(newUser).catch(() => {});
+    }
 
     const token = jwt.sign({ id: newUser.id, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
 
@@ -255,11 +278,19 @@ router.post('/forgot-password', async (req, res, next) => {
       });
     }
 
+    // Generate secure 15-minute reset token
+    const resetToken = jwt.sign(
+      { id: user.id || user._id, email: user.email, purpose: 'pwd_reset' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
     res.json({
       success: true,
       message: 'Account verified successfully.',
       email: user.email,
-      username: user.username
+      username: user.username,
+      resetToken
     });
   } catch (err) {
     next(err);
@@ -277,26 +308,32 @@ router.post('/reset-password', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
+    const { resetToken, newPassword } = req.body;
     const rawIdentifier = (req.body.email || req.body.emailOrUsername || '').trim();
-    const { newPassword } = req.body;
 
-    if (!rawIdentifier) {
-      return res.status(400).json({
-        success: false,
-        message: 'Workplace email address is required.'
-      });
+    // Security check: I-verify ang reset token para hindi ma-overwrite ang password ng basta-basta
+    let user = null;
+    if (resetToken) {
+      try {
+        const decoded = jwt.verify(resetToken, JWT_SECRET);
+        if (decoded.purpose !== 'pwd_reset') {
+          return res.status(400).json({ success: false, message: 'Invalid password reset token format.' });
+        }
+        user = store.users.find(u => (u.id === decoded.id || u._id === decoded.id) && u.email.toLowerCase() === decoded.email.toLowerCase());
+      } catch (tokenErr) {
+        return res.status(401).json({ success: false, message: 'Password reset authorization has expired (15m). Please verify email again.' });
+      }
     }
 
-    const target = rawIdentifier.toLowerCase();
-
-    const user = store.users.find(
-      u => u.email.toLowerCase() === target || u.username.toLowerCase() === target
-    );
+    if (!user && rawIdentifier) {
+      const target = rawIdentifier.toLowerCase();
+      user = store.users.find(u => u.email.toLowerCase() === target || u.username.toLowerCase() === target);
+    }
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'Account not found.'
+        message: 'Account not found or reset authorization missing.'
       });
     }
 

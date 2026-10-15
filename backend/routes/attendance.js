@@ -36,8 +36,8 @@ const calculateHours = (timeInStr, timeOutStr) => {
 };
 
 // Automatic checking kung late pumasok si employee:
-// Ang standard shift start ay 9:00 AM na may 5-minute grace period (hanggang 9:05 AM).
-// Kapag lumagpas ng 9:05 AM, automatic na ima-mark as 'Late' at bibilangin ang minutes late.
+// Ang standard shift start ay 9:00 AM na may 15-minute grace period (hanggang 9:15 AM on-time pa rin).
+// Kapag lumagpas ng 9:15 AM, automatic na ima-mark as 'Late' at bibilangin ang minutes late mula 9:00 AM.
 const checkLate = (timeStr) => {
   try {
     const [time, modifier] = timeStr.split(' ');
@@ -48,7 +48,7 @@ const checkLate = (timeStr) => {
     const standardStartMinutes = 9 * 60; // 9:00 AM
     const totalMinutes = hours * 60 + minutes;
 
-    if (totalMinutes > standardStartMinutes + 5) {
+    if (totalMinutes > standardStartMinutes + 15) {
       return { isLate: true, lateMinutes: totalMinutes - standardStartMinutes };
     }
     return { isLate: false, lateMinutes: 0 };
@@ -167,7 +167,10 @@ router.post('/clock-in', authenticate, (req, res) => {
   const nowTime = getCurrentTimeString();
   const { employeeId, notes, method, location, isOvertime } = req.body;
 
-  const targetEmpId = employeeId || (req.user.employee ? (req.user.employee.id || req.user.employee._id) : null);
+  // Security check: Regular employees cannot punch for someone else
+  const isUserAdmin = req.user.role === 'admin' || req.user.role === 'manager';
+  const myEmpId = req.user.employee ? (req.user.employee.id || req.user.employee._id) : null;
+  const targetEmpId = (isUserAdmin && employeeId) ? employeeId : myEmpId;
 
   if (!targetEmpId) {
     return res.status(400).json({
@@ -186,6 +189,15 @@ router.post('/clock-in', authenticate, (req, res) => {
     const aEmp = a.employee?.id || a.employee?._id || a.employee;
     return aEmp === targetEmpId && a.date === today;
   });
+
+  // Bawal mag-Time In kung may na-approve nang Leave para sa araw na ito
+  const onLeaveRecord = todayRecords.find(a => a.status === 'On Leave');
+  if (onLeaveRecord && !isOvertime) {
+    return res.status(400).json({
+      success: false,
+      message: 'Naka-On Leave ka ngayong araw (Approved Leave of Absence). Bawal mag-standard time in habang naka-leave.'
+    });
+  }
 
   const regularRecord = todayRecords.find(a => a.session !== 'Overtime' && a.status !== 'Overtime');
   const otRecord = todayRecords.find(a => a.session === 'Overtime' || a.status === 'Overtime');
@@ -291,6 +303,17 @@ router.post('/clock-in', authenticate, (req, res) => {
     store.attendance.push(regEntry);
   }
 
+  // I-sync agad sa MongoDB Atlas para laging persistent kahit mag-restart ang server
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    const db = mongoose.connection.db;
+    db.collection('attendance').updateOne(
+      { $or: [{ id: regEntry.id }, { _id: regEntry._id }] },
+      { $set: regEntry },
+      { upsert: true }
+    ).catch(() => {});
+  }
+
   const populated = store.getPopulatedAttendance().find(a => a.id === regEntry.id || a._id === regEntry.id);
 
   res.status(200).json({
@@ -307,7 +330,10 @@ router.post('/clock-out', authenticate, (req, res) => {
   const nowTime = getCurrentTimeString();
   const { employeeId, notes } = req.body;
 
-  const targetEmpId = employeeId || (req.user.employee ? (req.user.employee.id || req.user.employee._id) : null);
+  // Security check: Bawal mag-clock out para sa ibang empleyado kung hindi Admin
+  const isUserAdmin = req.user.role === 'admin' || req.user.role === 'manager';
+  const myEmpId = req.user.employee ? (req.user.employee.id || req.user.employee._id) : null;
+  const targetEmpId = (isUserAdmin && employeeId) ? employeeId : myEmpId;
 
   if (!targetEmpId) {
     return res.status(400).json({
@@ -331,6 +357,18 @@ router.post('/clock-out', authenticate, (req, res) => {
     activeOt.notes = (activeOt.notes ? activeOt.notes + ' | ' : '') + `Overtime completed: ${hours} hrs (${nowTime})` + (notes ? ` | ${notes}` : '');
 
     const populated = store.getPopulatedAttendance().find(a => a.id === activeOt.id || a._id === activeOt.id);
+
+    // I-sync ang Overtime clock-out sa MongoDB Atlas
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      const db = mongoose.connection.db;
+      db.collection('attendance').updateOne(
+        { $or: [{ id: activeOt.id }, { _id: activeOt._id }] },
+        { $set: activeOt },
+        { upsert: true }
+      ).catch(() => {});
+    }
+
     return res.json({
       success: true,
       message: `Clocked out from Overtime successfully at ${nowTime}. Total OT: ${hours} hrs logged.`,
@@ -385,6 +423,17 @@ router.post('/clock-out', authenticate, (req, res) => {
     if (notes) regularRecord.notes = regularRecord.notes ? `${regularRecord.notes} | ${notes}` : (regularRecord.notes || 'Full day shift completed');
   }
 
+  // I-sync ang Regular clock-out sa MongoDB Atlas
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    const db = mongoose.connection.db;
+    db.collection('attendance').updateOne(
+      { $or: [{ id: regularRecord.id }, { _id: regularRecord._id }] },
+      { $set: regularRecord },
+      { upsert: true }
+    ).catch(() => {});
+  }
+
   const populated = store.getPopulatedAttendance().find(a => a.id === regularRecord.id || a._id === regularRecord.id);
 
   res.json({
@@ -420,6 +469,18 @@ router.post('/reset-today', authenticate, (req, res) => {
     return !(aEmp === targetEmpId && a.date === today);
   });
 
+  // I-sync din ang reset sa MongoDB Atlas
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    const db = mongoose.connection.db;
+    db.collection('attendance').deleteMany({
+      $or: [
+        { employee: targetEmpId, date: today },
+        { 'employee.id': targetEmpId, date: today }
+      ]
+    }).catch(() => {});
+  }
+
   res.json({
     success: true,
     message: "Today's shift record reset successfully. Ready for Time-In."
@@ -441,6 +502,15 @@ router.post('/manual', [
   }
 
   const { employee, date, timeIn, timeOut, status, notes, workHours, lateMinutes } = req.body;
+  const today = getTodayString();
+
+  // Bawal mag-log ng attendance sa future dates
+  if (date > today) {
+    return res.status(400).json({
+      success: false,
+      message: 'Bawal mag-log ng manual attendance sa future date (bawal ang advance time-in).'
+    });
+  }
 
   const existing = store.attendance.find(a => a.employee === employee && a.date === date);
   if (existing) {
@@ -472,6 +542,14 @@ router.post('/manual', [
   };
 
   store.attendance.push(newRecord);
+
+  // I-sync sa MongoDB Atlas
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    const db = mongoose.connection.db;
+    db.collection('attendance').insertOne(newRecord).catch(() => {});
+  }
+
   const populated = store.getPopulatedAttendance().find(a => a.id === newRecord.id);
 
   res.status(201).json({

@@ -152,6 +152,7 @@ export default function Login() {
       const res = await api.resetPassword({
         email: verifiedAccount.email,
         emailOrUsername: verifiedAccount.email || verifiedAccount.username,
+        resetToken: verifiedAccount.resetToken,
         newPassword
       });
 

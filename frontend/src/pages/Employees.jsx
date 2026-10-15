@@ -151,7 +151,8 @@ export default function Employees() {
       shift: 'Standard (9:00 AM - 5:00 PM)',
       createAccount: true,
       username: '',
-      password: ''
+      password: '',
+      role: 'employee'
     });
     setFormError('');
     setShowPassword(false);
@@ -946,6 +947,24 @@ export default function Employees() {
                             Includes letters
                           </span>
                         </div>
+                      </div>
+
+                      {/* System Access Level Role */}
+                      <div className="pt-1">
+                        <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                          System Access Role (Permission Level)
+                        </label>
+                        <select
+                          value={form.role || 'employee'}
+                          onChange={(e) => setForm({ ...form, role: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium"
+                        >
+                          <option value="employee">Staff Member / Employee (Standard Portal Access)</option>
+                          <option value="admin">System Administrator (Full Administrative Privileges)</option>
+                        </select>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Only verified administrators can grant administrator privileges to new accounts.
+                        </p>
                       </div>
                     </div>
                   )}

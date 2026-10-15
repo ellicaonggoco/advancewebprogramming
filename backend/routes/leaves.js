@@ -67,7 +67,19 @@ router.post('/', [
   }
 
   const { employeeId, leaveType, startDate, endDate, daysCount, reason } = req.body;
-  const targetEmpId = employeeId || (req.user.employee ? (req.user.employee.id || req.user.employee._id) : null);
+
+  // Validation: Bawal ang baligtad na dates
+  if (startDate > endDate) {
+    return res.status(400).json({
+      success: false,
+      message: 'Bawal ang baligtad na dates: Ang Start Date ay hindi maaaring lumampas sa End Date.'
+    });
+  }
+
+  // Security: Staff members can only submit leave requests for their own profile
+  const isUserAdmin = req.user.role === 'admin' || req.user.role === 'manager';
+  const myEmpId = req.user.employee ? (req.user.employee.id || req.user.employee._id) : null;
+  const targetEmpId = (isUserAdmin && employeeId) ? employeeId : myEmpId;
 
   if (!targetEmpId) {
     return res.status(400).json({
@@ -76,12 +88,34 @@ router.post('/', [
     });
   }
 
-  let calculatedDays = daysCount;
-  if (!calculatedDays) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diff = Math.abs(end - start);
-    calculatedDays = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diff = Math.abs(end - start);
+  const calculatedDays = Number(daysCount) || Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+
+  // Balance Check: Siguraduhing may sapat pang leave credits si employee bago payagan mag-file
+  const employeeRecord = store.employees.find(e => e.id === targetEmpId || e._id === targetEmpId);
+  const leaveBalance = employeeRecord?.leaveBalance ?? 15;
+  if (calculatedDays > leaveBalance) {
+    return res.status(400).json({
+      success: false,
+      message: `Kulang ang natitirang leave credits (${leaveBalance} days remaining). Hindi pwedeng mag-file ng ${calculatedDays} days.`
+    });
+  }
+
+  // Overlap Check: Bawal ang duplicate leave application para sa magkakatulad na petsa
+  const hasOverlap = store.leaves.some(l => {
+    const lEmpId = l.employee?.id || l.employee?._id || l.employee;
+    return lEmpId === targetEmpId &&
+      l.status !== 'Rejected' &&
+      !(endDate < l.startDate || startDate > l.endDate);
+  });
+
+  if (hasOverlap) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mayroon ka nang umiiral na leave application para sa mga petsang ito (Pending o Approved).'
+    });
   }
 
   const newId = `leave-${Date.now()}`;
@@ -101,6 +135,13 @@ router.post('/', [
   };
 
   store.leaves.push(newLeave);
+
+  // Sync bagong leave sa MongoDB Atlas
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    mongoose.connection.db.collection('leaves').insertOne(newLeave).catch(() => {});
+  }
+
   const populated = store.getPopulatedLeaves().find(l => l.id === newId);
 
   res.status(201).json({
@@ -134,8 +175,22 @@ router.put('/:id/status', [
   current.reviewedBy = req.user.username;
   current.reviewNotes = reviewNotes || '';
 
-  // If approved, sync with attendance
+  // Kapag Approved: ibawas sa leave balance at i-sync sa attendance
   if (status === 'Approved') {
+    // 1. Bawasan ang leave balance ng empleyado
+    const emp = store.employees.find(e => e.id === current.employee || e._id === current.employee);
+    if (emp) {
+      emp.leaveBalance = Math.max(0, (emp.leaveBalance ?? 15) - (current.daysCount || 1));
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState === 1) {
+        mongoose.connection.db.collection('employees').updateOne(
+          { $or: [{ id: emp.id }, { _id: emp._id }, { employeeId: emp.employeeId }] },
+          { $set: { leaveBalance: emp.leaveBalance } }
+        ).catch(() => {});
+      }
+    }
+
+    // 2. I-record ang 'On Leave' sa attendance records
     const start = new Date(current.startDate);
     const end = new Date(current.endDate);
 
@@ -144,13 +199,15 @@ router.put('/:id/status', [
 
       const dateStr = d.toISOString().split('T')[0];
       const existingAtt = store.attendance.find(a => a.employee === current.employee && a.date === dateStr);
+      let attDoc;
       if (existingAtt) {
         existingAtt.status = 'On Leave';
         existingAtt.notes = `Approved ${current.leaveType}`;
         existingAtt.method = 'System Auto';
         existingAtt.workHours = 0;
+        attDoc = existingAtt;
       } else {
-        store.attendance.push({
+        attDoc = {
           id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           _id: `att-${Date.now()}`,
           employee: current.employee,
@@ -164,12 +221,33 @@ router.put('/:id/status', [
           notes: `Approved ${current.leaveType}`,
           location: 'Main Office',
           createdAt: new Date()
-        });
+        };
+        store.attendance.push(attDoc);
+      }
+
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState === 1) {
+        mongoose.connection.db.collection('attendance').updateOne(
+          { $or: [{ id: attDoc.id }, { _id: attDoc._id }] },
+          { $set: attDoc },
+          { upsert: true }
+        ).catch(() => {});
       }
     }
   }
 
   store.leaves[index] = current;
+
+  // Sync leave decision to MongoDB Atlas
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    mongoose.connection.db.collection('leaves').updateOne(
+      { $or: [{ id: current.id }, { _id: current._id }] },
+      { $set: current },
+      { upsert: true }
+    ).catch(() => {});
+  }
+
   const populated = store.getPopulatedLeaves().find(l => l.id === current.id);
 
   res.json({

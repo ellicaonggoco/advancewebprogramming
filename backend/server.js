@@ -85,6 +85,53 @@ if (mongoUri && mongoUri.trim() !== '') {
           });
           console.log(`🍃 [MongoDB] Hydrated ${mongoEmps.length} employees with persistent profiles & avatars.`);
         }
+
+        // Hydrate leave applications from MongoDB Atlas
+        const mongoLeaves = await db.collection('leaves').find().toArray();
+        if (mongoLeaves && mongoLeaves.length > 0) {
+          mongoLeaves.forEach(ml => {
+            const idx = store.leaves.findIndex(l => 
+              (l.id && l.id === ml.id) || 
+              (l._id && l._id === ml._id) ||
+              (l.employee === ml.employee && l.startDate === ml.startDate)
+            );
+            if (idx >= 0) {
+              store.leaves[idx] = { ...store.leaves[idx], ...ml };
+            } else {
+              store.leaves.push(ml);
+            }
+          });
+          console.log(`🍃 [MongoDB] Hydrated ${mongoLeaves.length} leave applications.`);
+        }
+
+        // Hydrate attendance records from MongoDB Atlas
+        const mongoAtt = await db.collection('attendance').find().toArray();
+        if (mongoAtt && mongoAtt.length > 0) {
+          mongoAtt.forEach(ma => {
+            // Strictly match by same employee and same date to prevent cross-day record overwrite
+            const idx = store.attendance.findIndex(a => 
+              (a.employee === ma.employee && a.date === ma.date && (a.session || 'Regular') === (ma.session || 'Regular')) ||
+              (a.id && ma.id && a.id === ma.id && a.date === ma.date)
+            );
+            if (idx >= 0) {
+              store.attendance[idx] = { ...store.attendance[idx], ...ma };
+            } else {
+              store.attendance.push(ma);
+            }
+          });
+          console.log(`🍃 [MongoDB] Hydrated ${mongoAtt.length} attendance logs from cloud database.`);
+        }
+
+        // Siguraduhing naka-save din sa Atlas ang shift records para sa araw na ito
+        const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        const todayCount = await db.collection('attendance').countDocuments({ date: todayStr });
+        if (todayCount === 0) {
+          const todayRecords = store.attendance.filter(a => a.date === todayStr);
+          if (todayRecords.length > 0) {
+            await db.collection('attendance').insertMany(todayRecords).catch(() => {});
+            console.log(`🍃 [MongoDB] Seeded today's (${todayStr}) ${todayRecords.length} shift logs to cloud database.`);
+          }
+        }
       } catch (hydrateErr) {
         console.warn('MongoDB hydration warning:', hydrateErr.message);
       }
