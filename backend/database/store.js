@@ -159,10 +159,10 @@ const generateInitialAttendance = () => {
     { id: 'att-1', _id: 'att-1', employee: 'emp-1', date: todayStr, timeIn: '08:45 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Executive morning briefing', location: 'Main Office', createdAt: new Date() },
     // emp-2 (John Herzsel Datul) is unclocked today awaiting morning shift recording
     { id: 'att-3', _id: 'att-3', employee: 'emp-3', date: todayStr, timeIn: '08:58 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Database replication sync', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-4', _id: 'att-4', employee: 'emp-4', date: todayStr, timeIn: '09:18 AM', timeOut: null, status: 'Late', workHours: 7.78, lateMinutes: 18, method: 'Web Clock-In', notes: 'Transit delay along highway', location: 'Main Office', createdAt: new Date() },
+    { id: 'att-4', _id: 'att-4', employee: 'emp-4', date: todayStr, timeIn: null, timeOut: null, status: 'On Leave', workHours: 0, lateMinutes: 0, method: 'System Auto', notes: 'Approved Sick Leave (Official Leave of Absence)', location: 'Main Office', createdAt: new Date() },
     { id: 'att-5', _id: 'att-5', employee: 'emp-5', date: todayStr, timeIn: '08:40 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Automated test suite run', location: 'Main Office', createdAt: new Date() },
     { id: 'att-6', _id: 'att-6', employee: 'emp-6', date: todayStr, timeIn: '08:50 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Personnel morning shift', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-7', _id: 'att-7', employee: 'emp-7', date: todayStr, timeIn: null, timeOut: null, status: 'On Leave', workHours: 0, lateMinutes: 0, method: 'System Auto', notes: 'Approved Vacation Leave', location: 'Main Office', createdAt: new Date() }
+    { id: 'att-7', _id: 'att-7', employee: 'emp-7', date: todayStr, timeIn: '08:55 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Financial analytics morning shift', location: 'Main Office', createdAt: new Date() }
   );
 
   let count = 8;
@@ -189,12 +189,6 @@ const generateInitialAttendance = () => {
         lateMinutes = 22;
         workHours = 7.72; // Accurately calculated elapsed hours (09:22 AM to 05:05 PM = 7 hrs 43 mins = 7.72 hrs)
         notes = 'Morning transit congestion';
-      } else if (pseudoRand === 2 && (empId === 'emp-6' || empId === 'emp-7')) {
-        status = 'On Leave';
-        timeIn = null;
-        timeOut = null;
-        workHours = 0;
-        notes = 'Approved leave of absence';
       } else if (pseudoRand === 3 && empId === 'emp-5') {
         status = 'Half-Day';
         timeIn = '08:45 AM';
@@ -229,26 +223,26 @@ const initialLeaves = [
   {
     id: 'leave-1',
     _id: 'leave-1',
-    employee: 'emp-7',
-    leaveType: 'Vacation Leave',
+    employee: 'emp-4',
+    leaveType: 'Sick Leave',
     startDate: formatDate(new Date()),
-    endDate: formatDate(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)),
-    daysCount: 3,
-    reason: 'Annual scheduled family vacation trip',
+    endDate: formatDate(new Date()),
+    daysCount: 1,
+    reason: 'Medical consultation and recovery',
     status: 'Approved',
     reviewedBy: 'Ellica Chris Onggoco',
-    reviewNotes: 'Approved. Enjoy your time off!',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    reviewNotes: 'Approved. Rest well and recover!',
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
   },
   {
     id: 'leave-2',
     _id: 'leave-2',
-    employee: 'emp-4',
-    leaveType: 'Sick Leave',
+    employee: 'emp-5',
+    leaveType: 'Emergency Leave',
     startDate: formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000)),
     endDate: formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000)),
     daysCount: 1,
-    reason: 'Medical consultation and recovery',
+    reason: 'Residential facility electrical maintenance',
     status: 'Pending',
     reviewedBy: null,
     reviewNotes: '',
@@ -257,16 +251,16 @@ const initialLeaves = [
   {
     id: 'leave-3',
     _id: 'leave-3',
-    employee: 'emp-5',
-    leaveType: 'Emergency Leave',
-    startDate: formatDate(new Date()),
-    endDate: formatDate(new Date()),
+    employee: 'emp-7',
+    leaveType: 'Vacation Leave',
+    startDate: formatDate(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)),
+    endDate: formatDate(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)),
     daysCount: 1,
-    reason: 'Home residential electrical inspection',
+    reason: 'Personal family matter',
     status: 'Rejected',
     reviewedBy: 'Ellica Chris Onggoco',
-    reviewNotes: 'Please reschedule due to active QA sprint.',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+    reviewNotes: 'Please reschedule due to active financial audit sprint.',
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
   }
 ];
 

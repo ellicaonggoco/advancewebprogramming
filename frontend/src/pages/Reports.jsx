@@ -70,6 +70,7 @@ export default function Reports() {
       { label: 'Days Worked', key: 'daysWorked' },
       { label: 'On-Time Days', key: 'presentDays' },
       { label: 'Late Days', key: 'lateDays' },
+      { label: 'On Leave Days', key: 'onLeaveDays' },
       { label: 'Total Late Minutes', key: 'totalLateMinutes' },
       { label: 'Total Hours Logged', key: 'totalHours' },
       { label: 'Compliance Rate (%)', key: 'complianceRate' }
@@ -92,7 +93,7 @@ export default function Reports() {
   };
 
   const handleExportMonthlyPdf = () => {
-    const headers = ['Employee ID', 'Staff Member', 'Department', 'Days Worked', 'On-Time', 'Late Days', 'Late Mins', 'Hours', 'Compliance'];
+    const headers = ['Employee ID', 'Staff Member', 'Department', 'Days Worked', 'On-Time', 'Late Days', 'On Leave', 'Late Mins', 'Hours', 'Compliance'];
     const rows = monthlyData.map(r => [
       r.employeeId,
       r.name,
@@ -100,6 +101,7 @@ export default function Reports() {
       `${r.daysWorked} days`,
       r.presentDays,
       r.lateDays,
+      `${r.onLeaveDays || 0} days`,
       `${r.totalLateMinutes}m`,
       `${r.totalHours} hrs`,
       `${r.complianceRate}%`
@@ -373,6 +375,7 @@ export default function Reports() {
                   <th className="py-3 px-4 text-center">Days Worked</th>
                   <th className="py-3 px-4 text-center">On-Time</th>
                   <th className="py-3 px-4 text-center">Late</th>
+                  <th className="py-3 px-4 text-center">On Leave</th>
                   <th className="py-3 px-4 text-center">Late Minutes</th>
                   <th className="py-3 px-4 text-center">Hours Logged</th>
                   <th className="py-3 px-4 text-center">Compliance</th>
@@ -381,13 +384,13 @@ export default function Reports() {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <td colSpan={10} className="py-12 text-center text-slate-400">
                       Loading statistics...
                     </td>
                   </tr>
                 ) : monthlyData.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <td colSpan={10} className="py-12 text-center text-slate-400">
                       No records found for this period.
                     </td>
                   </tr>
@@ -411,6 +414,15 @@ export default function Reports() {
                       </td>
                       <td className="py-3 px-4 text-center font-medium text-amber-700">
                         {row.lateDays}
+                      </td>
+                      <td className="py-3 px-4 text-center font-medium">
+                        {row.onLeaveDays > 0 ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+                            {row.onLeaveDays} day{row.onLeaveDays > 1 ? 's' : ''}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-center font-medium text-slate-600">
                         {row.totalLateMinutes}m
