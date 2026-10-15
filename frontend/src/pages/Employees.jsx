@@ -68,26 +68,6 @@ export default function Employees() {
   const [formError, setFormError] = useState('');
   const [successToast, setSuccessToast] = useState(null);
 
-  useEffect(() => {
-    if (successToast) {
-      const timer = setTimeout(() => {
-        setSuccessToast(null);
-      }, 6000);
-      return () => clearTimeout(timer);
-    }
-  }, [successToast]);
-
-  useEffect(() => {
-    if (modalOpen || profileModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [modalOpen, profileModal]);
-
   // View drawer
   const [profileModal, setProfileModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
@@ -109,6 +89,26 @@ export default function Employees() {
     username: '',
     password: ''
   });
+
+  useEffect(() => {
+    if (successToast) {
+      const timer = setTimeout(() => {
+        setSuccessToast(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [successToast]);
+
+  useEffect(() => {
+    if (modalOpen || profileModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [modalOpen, profileModal]);
 
   const loadData = async () => {
     try {
@@ -293,12 +293,13 @@ export default function Employees() {
   };
 
   const filteredEmployees = employees.filter((emp) => {
+    if (!emp) return false;
     if (!search) return true;
     const s = search.toLowerCase();
-    const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
-    const id = emp.employeeId.toLowerCase();
-    const email = emp.email.toLowerCase();
-    const pos = emp.position.toLowerCase();
+    const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase();
+    const id = (emp.employeeId || '').toLowerCase();
+    const email = (emp.email || '').toLowerCase();
+    const pos = (emp.position || '').toLowerCase();
     return fullName.includes(s) || id.includes(s) || email.includes(s) || pos.includes(s);
   });
 
@@ -640,7 +641,7 @@ export default function Employees() {
       </div>
 
       {/* Add / Edit Modal */}
-      {modalOpen && createPortal(
+      {modalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -984,7 +985,7 @@ export default function Employees() {
       )}
 
       {/* Profile Drawer */}
-      {profileModal && selectedEmp && createPortal(
+      {profileModal && selectedEmp && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
