@@ -295,7 +295,7 @@ export default function Login() {
                       required
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="e.g. ellica.onggoco@company.com"
+                      placeholder="e.g. name@company.com"
                       autoComplete="email"
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-slate-900 text-xs placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
                     />
@@ -423,7 +423,7 @@ export default function Login() {
                         required
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        placeholder="e.g. ellica.onggoco@company.com"
+                        placeholder="e.g. name@company.com"
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
                       />
                     </div>
