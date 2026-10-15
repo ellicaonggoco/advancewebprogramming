@@ -163,41 +163,56 @@ export default function Dashboard() {
           <StatCard
             title="Total Workforce"
             value={stats?.totalEmployees || 0}
-            subtitle={`${stats?.activeEmployees || 0} verified active`}
+            subtitle={
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+                <span>{stats?.activeEmployees || 0} active employees enrolled</span>
+              </span>
+            }
             icon={Users}
-            color="slate"
-            badge="Verified"
-            badgeType="neutral"
           />
 
           <StatCard
             title="Present Today"
             value={today.present}
-            subtitle="On-time shift arrival"
+            subtitle={
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>On-time shift attendance</span>
+              </span>
+            }
             icon={UserCheck}
-            color="slate"
-            badge={`${today.present} Present`}
-            badgeType="success"
           />
 
           <StatCard
             title="Late Today"
             value={today.late}
-            subtitle="Past 9:00 AM grace period"
+            subtitle={
+              today.late > 0 ? (
+                <span className="flex items-center gap-1.5 text-amber-600 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span>Requires supervisor review</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-zinc-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>All arrivals on schedule</span>
+                </span>
+              )
+            }
             icon={Clock}
-            color="slate"
-            badge={today.late > 0 ? "Requires review" : "On schedule"}
-            badgeType={today.late > 0 ? "warning" : "success"}
           />
 
           <StatCard
             title="On Approved Leave"
             value={today.onLeave}
-            subtitle={`${stats?.pendingLeaves || 0} pending applications`}
+            subtitle={
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                <span>{stats?.pendingLeaves || 0} pending applications</span>
+              </span>
+            }
             icon={CalendarOff}
-            color="slate"
-            badge={`${today.onLeave} Out of Office`}
-            badgeType="neutral"
           />
         </div>
       ) : (
@@ -205,52 +220,67 @@ export default function Dashboard() {
           <StatCard
             title="Shift Schedule"
             value={stats?.employeeStats?.shift || '09:00 AM - 06:00 PM'}
-            subtitle="Assigned Working Shift"
+            subtitle={
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+                <span>Assigned working shift (8h)</span>
+              </span>
+            }
             icon={Clock}
-            color="slate"
-            badge="Standard Shift"
-            badgeType="neutral"
           />
 
           <StatCard
             title="Days Present"
             value={`${stats?.employeeStats?.presentDays ?? 0} Days`}
-            subtitle="Recorded this month"
+            subtitle={
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>{stats?.employeeStats?.onTimeRate ?? 100}% on-time punctuality</span>
+              </span>
+            }
             icon={UserCheck}
-            color="slate"
-            badge={`${stats?.employeeStats?.onTimeRate ?? 100}% Punctual`}
-            badgeType="success"
           />
 
           <StatCard
             title="Shift Deviations"
             value={`${stats?.employeeStats?.lateDays ?? 0} Late`}
-            subtitle="15-min grace window"
+            subtitle={
+              (stats?.employeeStats?.lateDays || 0) > 0 ? (
+                <span className="flex items-center gap-1.5 text-amber-600 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span>15-min grace window applied</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-zinc-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>On schedule this month</span>
+                </span>
+              )
+            }
             icon={Clock}
-            color="slate"
-            badge={(stats?.employeeStats?.lateDays || 0) > 0 ? "Review log" : "On schedule"}
-            badgeType={(stats?.employeeStats?.lateDays || 0) > 0 ? "warning" : "success"}
           />
 
           <div className="p-5 rounded-xl bg-white border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-zinc-300 transition-all duration-150 flex flex-col justify-between">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-zinc-500 tracking-tight">Leave Balance</span>
-              <CalendarOff className="w-4 h-4 text-zinc-400 stroke-[1.75]" />
+              <div className="w-7 h-7 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
+                <CalendarOff className="w-3.5 h-3.5 stroke-[1.75]" />
+              </div>
             </div>
 
-            <div className="mt-2.5 mb-2 flex items-baseline justify-between">
+            <div className="mt-2 mb-3">
               <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900">
                 {stats?.employeeStats?.leaveBalance ?? 15} Days
               </div>
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                {stats?.employeeStats?.approvedLeaves || 0} Approved
-              </span>
+              <p className="text-[11px] text-zinc-400 mt-0.5 font-normal">Available annual PTO allocation</p>
             </div>
 
             <div className="pt-2.5 border-t border-zinc-100 flex items-center justify-between text-xs">
-              <span className="text-zinc-400 text-[11px] font-normal">
-                {stats?.employeeStats?.pendingLeaves || 0} pending
-              </span>
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium">
+                <span>{stats?.employeeStats?.approvedLeaves || 0} used</span>
+                <span className="text-zinc-300">•</span>
+                <span>{stats?.employeeStats?.pendingLeaves || 0} pending</span>
+              </div>
               <Link
                 to="/leaves?action=apply"
                 className="px-2.5 py-1 rounded-lg bg-[#39333B] hover:bg-[#483F4B] text-[#DFC090] hover:text-white text-[11px] font-semibold transition flex items-center gap-1 shadow-2xs cursor-pointer"
