@@ -256,8 +256,13 @@ export default function Attendance() {
     if (actionParam === 'new' || actionParam === 'adjust') {
       setActiveTab('adjustments');
       openApplyAdjustment();
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        return next;
+      }, { replace: true });
     }
-  }, [searchParams, employees, user]);
+  }, [searchParams, employees, user, setSearchParams]);
 
   const handleExportAttendanceCsv = () => {
     const headers = [

@@ -146,13 +146,38 @@ export default function Employees() {
     setModalOpen(true);
   };
 
+  const closeModal = () => {
+    setModalOpen(false);
+    setFormError('');
+    if (searchParams.get('action')) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        return next;
+      }, { replace: true });
+    }
+  };
+
   useEffect(() => {
     if (searchParams.get('action') === 'new' && !loading) {
       openAddModal();
+      // Consume query param so subsequent data reloads do not trigger modal reopen
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        return next;
+      }, { replace: true });
     }
-  }, [searchParams, loading]);
+  }, [searchParams, loading, setSearchParams]);
 
   const openEditModal = (emp) => {
+    if (searchParams.get('action')) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        return next;
+      }, { replace: true });
+    }
     setIsEditing(true);
     setEditId(emp.id || emp._id);
     setForm({
@@ -226,6 +251,13 @@ export default function Employees() {
 
       // Close modal and return directly to employee directory
       setModalOpen(false);
+      if (searchParams.get('action')) {
+        setSearchParams(prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('action');
+          return next;
+        }, { replace: true });
+      }
       setSearch('');
       setSelectedDept('All');
       setSelectedStatus('All');
@@ -604,7 +636,7 @@ export default function Employees() {
                 {isEditing ? 'Edit Staff Profile' : 'Enroll New Staff Member'}
               </h3>
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={closeModal}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -917,7 +949,7 @@ export default function Employees() {
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={closeModal}
                   className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer"
                 >
                   Cancel
