@@ -280,14 +280,9 @@ export default function Login() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Workplace Email Field */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700">
-                      Workplace Email Address
-                    </label>
-                    <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/70">
-                      Email Required
-                    </span>
-                  </div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Workplace Email Address
+                  </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
@@ -295,14 +290,11 @@ export default function Login() {
                       required
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="e.g. name@company.com"
+                      placeholder="name@company.com"
                       autoComplete="email"
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-slate-900 text-xs placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
                     />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Enter your registered corporate email (<span className="font-mono text-slate-500">name@company.com</span>). Usernames are disabled.
-                  </p>
                 </div>
 
                 {/* Password Field */}
@@ -423,7 +415,7 @@ export default function Login() {
                         required
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        placeholder="e.g. name@company.com"
+                        placeholder="name@company.com"
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
                       />
                     </div>
