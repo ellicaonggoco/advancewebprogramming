@@ -477,7 +477,7 @@ export default function Dashboard() {
                               <td className="py-3">
                                 <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} timeIn={rec.timeIn} timeOut={rec.timeOut} workHours={rec.workHours} />
                               </td>
-                              <td className="py-3 text-slate-500 text-xs max-w-xs truncate">{rec.notes || 'Normal entry'}</td>
+                              <td className="py-3 text-slate-500 text-xs max-w-xs truncate" title={rec.notes || 'Normal entry'}>{rec.notes || 'Normal entry'}</td>
                             </>
                           ) : (
                             <>
@@ -487,7 +487,7 @@ export default function Dashboard() {
                               <td className="py-3 whitespace-nowrap">
                                 <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} timeIn={rec.timeIn} timeOut={rec.timeOut} workHours={rec.workHours} />
                               </td>
-                              <td className="py-3 text-slate-500 text-xs max-w-xs truncate">{rec.notes || rec.method || 'Institutional time-in'}</td>
+                              <td className="py-3 text-slate-500 text-xs max-w-xs truncate" title={rec.notes || rec.method || 'Institutional time-in'}>{rec.notes || rec.method || 'Institutional time-in'}</td>
                             </>
                           )}
                         </tr>

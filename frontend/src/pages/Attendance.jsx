@@ -878,10 +878,10 @@ export default function Attendance() {
                         <StatusBadge status={rec.status} lateMinutes={rec.lateMinutes} timeIn={rec.timeIn} timeOut={rec.timeOut} workHours={rec.workHours} />
                       </td>
 
-                      <td className="py-3 px-4 text-zinc-500 max-w-xs truncate text-xs">
+                      <td className="py-3 px-4 text-zinc-500 max-w-sm text-xs">
                         <div className="flex flex-col">
                           <span className="text-[10px] uppercase font-medium text-zinc-400 tracking-wider">{rec.method}</span>
-                          <span className="truncate text-zinc-600 text-[11px]">{rec.notes || 'Normal entry'}</span>
+                          <span className="break-words text-zinc-700 text-[11px] leading-relaxed whitespace-normal" title={rec.notes || 'Normal entry'}>{rec.notes || 'Normal entry'}</span>
                         </div>
                       </td>
 
@@ -1100,10 +1100,10 @@ export default function Attendance() {
                             <span className="text-amber-700 font-medium">{adj.requestedTimeOut}</span>
                           </td>
 
-                          <td className="py-3.5 px-4 text-zinc-600 max-w-xs text-xs">
-                            <p className="font-medium text-zinc-900 truncate">{adj.reason}</p>
+                          <td className="py-3.5 px-4 text-zinc-600 max-w-sm text-xs">
+                            <p className="font-medium text-zinc-900 break-words leading-relaxed whitespace-normal" title={adj.reason}>{adj.reason}</p>
                             {adj.reviewNotes && (
-                              <p className="text-[10px] text-zinc-400 italic mt-0.5 truncate">
+                              <p className="text-[10px] text-zinc-500 italic mt-0.5 break-words whitespace-normal" title={`Admin note: ${adj.reviewNotes}`}>
                                 Admin note: {adj.reviewNotes}
                               </p>
                             )}

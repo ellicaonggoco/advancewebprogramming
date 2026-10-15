@@ -314,10 +314,10 @@ export default function LeaveRequests() {
                         {l.startDate} → {l.endDate}
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-600 max-w-xs text-xs">
-                        <p className="truncate font-medium">{l.reason}</p>
+                      <td className="py-3.5 px-4 text-slate-600 max-w-sm text-xs">
+                        <p className="font-medium text-slate-900 break-words leading-relaxed whitespace-normal" title={l.reason}>{l.reason}</p>
                         {l.reviewNotes && (
-                          <p className="text-[10px] text-slate-400 italic mt-0.5 truncate">
+                          <p className="text-[10px] text-slate-500 italic mt-0.5 break-words whitespace-normal" title={`Note: ${l.reviewNotes}`}>
                             Note: {l.reviewNotes}
                           </p>
                         )}
