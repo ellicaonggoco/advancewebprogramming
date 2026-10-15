@@ -27,7 +27,7 @@ export default function TimeClockWidget({ onClockEvent }) {
   const fetchTodayStatus = async () => {
     try {
       const todayStr = getLocalDateString(new Date());
-      const myEmpId = user?.employee?.id || user?.employee?._id;
+      const myEmpId = user?.employee?.id || user?.employee?._id || (typeof user?.employee === 'string' ? user?.employee : null);
 
       const [res, authRes] = await Promise.all([
         api.getAttendance({ date: todayStr }),
@@ -35,7 +35,10 @@ export default function TimeClockWidget({ onClockEvent }) {
       ]);
 
       if (res.success && res.data) {
-        const myRecords = res.data.filter(r => r.employee && (r.employee.id === myEmpId || r.employee._id === myEmpId));
+        const myRecords = res.data.filter(r => {
+          const rEmpId = r.employee?.id || r.employee?._id || (typeof r.employee === 'string' ? r.employee : null);
+          return (myEmpId && rEmpId === myEmpId) || (r.employee && user?.employee && (r.employee.employeeId === user.employee.employeeId));
+        });
 
         const regular = myRecords.find(r => r.session !== 'Overtime' && r.status !== 'Overtime');
         const ot = myRecords.find(r => r.session === 'Overtime' || r.status === 'Overtime');
@@ -68,7 +71,8 @@ export default function TimeClockWidget({ onClockEvent }) {
     setLoading(true);
     setFeedback(null);
     try {
-      const res = await api.clockIn({ notes });
+      const myEmpId = user?.employee?.id || user?.employee?._id || (typeof user?.employee === 'string' ? user?.employee : null);
+      const res = await api.clockIn({ notes, employeeId: myEmpId });
       setFeedback({ type: 'success', message: res.message });
       setNotes('');
       await fetchTodayStatus();
@@ -87,7 +91,8 @@ export default function TimeClockWidget({ onClockEvent }) {
     setLoading(true);
     setFeedback(null);
     try {
-      const res = await api.clockOut({ notes });
+      const myEmpId = user?.employee?.id || user?.employee?._id || (typeof user?.employee === 'string' ? user?.employee : null);
+      const res = await api.clockOut({ notes, employeeId: myEmpId });
       setFeedback({ type: 'success', message: res.message });
       setNotes('');
       await fetchTodayStatus();
@@ -104,7 +109,8 @@ export default function TimeClockWidget({ onClockEvent }) {
     setLoading(true);
     setFeedback(null);
     try {
-      const res = await api.clockIn({ notes, isOvertime: true });
+      const myEmpId = user?.employee?.id || user?.employee?._id || (typeof user?.employee === 'string' ? user?.employee : null);
+      const res = await api.clockIn({ notes, employeeId: myEmpId, isOvertime: true });
       setFeedback({ type: 'success', message: res.message });
       setNotes('');
       await fetchTodayStatus();

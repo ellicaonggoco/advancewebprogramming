@@ -304,7 +304,8 @@ const store = {
   getPopulatedAttendance() {
     const populatedEmps = this.getPopulatedEmployees();
     return this.attendance.map(att => {
-      const emp = populatedEmps.find(e => e.id === att.employee || e._id === att.employee);
+      const attEmpId = att.employee?.id || att.employee?._id || (typeof att.employee === 'string' ? att.employee : null);
+      const emp = populatedEmps.find(e => e.id === attEmpId || e._id === attEmpId || e.id === att.employee || e._id === att.employee);
 
       // Auto-evaluate under-duration records (e.g. 1 minute shift punch)
       let status = att.status;
