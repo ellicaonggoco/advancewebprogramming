@@ -164,12 +164,19 @@ router.get('/monthly-summary', authenticate, (req, res) => {
 // @route   GET /api/reports/department-analytics
 // @desc    REPORT 2: Department-wide Attendance and Leave Analytics
 router.get('/department-analytics', authenticate, (req, res) => {
-  const today = getTodayString();
-  const currentMonth = today.substring(0, 7);
+  const { month, year, departmentId } = req.query;
 
-  const departments = store.departments;
+  const currentYear = year ? parseInt(year) : new Date().getFullYear();
+  const currentMonth = month ? String(month).padStart(2, '0') : String(new Date().getMonth() + 1).padStart(2, '0');
+  const monthPrefix = `${currentYear}-${currentMonth}`;
+
+  let departments = store.departments;
+  if (departmentId && departmentId !== 'All') {
+    departments = departments.filter(d => d.id === departmentId || d._id === departmentId || d.name === departmentId);
+  }
+
   const employees = store.employees.filter(e => e.status === 'Active');
-  const attendanceRecords = store.attendance.filter(a => a.date.startsWith(currentMonth));
+  const attendanceRecords = store.attendance.filter(a => a.date.startsWith(monthPrefix));
   const leaveRequests = store.leaves;
 
   const departmentReports = departments.map(dept => {
@@ -205,7 +212,8 @@ router.get('/department-analytics', authenticate, (req, res) => {
 
   res.json({
     success: true,
-    currentMonth,
+    period: { month: currentMonth, year: currentYear },
+    currentMonth: monthPrefix,
     data: departmentReports
   });
 });
