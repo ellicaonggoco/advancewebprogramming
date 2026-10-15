@@ -190,6 +190,8 @@ export default function Employees() {
 
       const payload = {
         ...form,
+        status: isEditing ? form.status : 'Active',
+        shift: isEditing ? form.shift : (form.shift || 'Standard (9:00 AM - 5:00 PM)'),
         salary: form.salary === '' ? 0 : parseFloat(form.salary) || 0
       };
 
@@ -685,33 +687,75 @@ export default function Employees() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Roster Status
-                  </label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="On Leave">On Leave</option>
-                    <option value="Terminated">Terminated</option>
-                  </select>
-                </div>
+                {!isEditing ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                        Roster Status
+                      </label>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Auto-Active
+                      </span>
+                    </div>
+                    <div className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-800 font-medium flex items-center gap-2 cursor-not-allowed select-none">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>Active</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      New employee accounts automatically start as Active.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                      Roster Status
+                    </label>
+                    <select
+                      value={form.status}
+                      onChange={(e) => setForm({ ...form, status: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="On Leave">On Leave</option>
+                      <option value="Terminated">Terminated</option>
+                    </select>
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Assigned Shift
-                  </label>
-                  <input
-                    type="text"
-                    value={form.shift}
-                    onChange={(e) => setForm({ ...form, shift: e.target.value })}
-                    placeholder="Standard (9:00 AM - 5:00 PM)"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
-                  />
-                </div>
+                {!isEditing ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                        Assigned Shift
+                      </label>
+                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                        Auto-Assigned
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      readOnly
+                      value={form.shift}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-slate-800 cursor-not-allowed select-none focus:outline-none"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Standard corporate shift schedule (9:00 AM - 5:00 PM).
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                      Assigned Shift
+                    </label>
+                    <input
+                      type="text"
+                      value={form.shift}
+                      onChange={(e) => setForm({ ...form, shift: e.target.value })}
+                      placeholder="Standard (9:00 AM - 5:00 PM)"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Login Account & Password Requirements */}

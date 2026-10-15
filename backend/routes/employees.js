@@ -185,7 +185,7 @@ router.post('/', [
     position,
     hireDate: hireDate || new Date().toISOString().split('T')[0],
     salary: Number(salary),
-    status: status || 'Active',
+    status: 'Active',
     shift: shift || 'Standard (9:00 AM - 5:00 PM)',
     avatar: avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${firstName}%20${lastName}`,
     createdAt: new Date()
