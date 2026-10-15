@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Building2, 
   Plus, 
@@ -13,9 +14,10 @@ import {
 import { api, getLocalDateString } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { generatePdfDocument } from '../utils/exportPdf';
+import { exportToCsv } from '../utils/exportCsv';
 
 export default function Departments() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +36,17 @@ export default function Departments() {
     managerName: '',
     budget: 300000
   });
+
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [modalOpen]);
 
   const loadDepartments = async () => {
     try {
@@ -115,29 +128,50 @@ export default function Departments() {
   };
 
   const handleExportDeptPdf = () => {
-    const headers = ['Department Code', 'Department Name', 'Head / Manager', 'Annual Budget (PHP)', 'Total Staff Assigned'];
-    const rows = departments.map(d => [
-      d.code || '—',
-      d.name || '—',
-      d.managerName || 'Unassigned',
-      d.budget ? `PHP ${Number(d.budget).toLocaleString()}` : '—',
-      d.employeeCount !== undefined ? `${d.employeeCount} active members` : 'Assigned per roster'
-    ]);
+    try {
+      const headers = ['Department Code', 'Department Name', 'Head / Manager', 'Annual Budget (PHP)', 'Total Staff Assigned'];
+      const rows = departments.map(d => [
+        d.code || '—',
+        d.name || '—',
+        d.managerName || 'Unassigned',
+        d.budget ? `PHP ${Number(d.budget).toLocaleString()}` : '—',
+        d.employeeCount !== undefined ? `${d.employeeCount} active members` : 'Assigned per roster'
+      ]);
 
-    generatePdfDocument({
-      title: 'Institutional Departmental Directory & Hierarchy',
-      subtitle: 'Official Organizational Structure, Leadership, and Budgetary Allocation',
-      meta: [
-        `Total Active Departments: ${departments.length} divisions`,
-        `Exported by: ${user?.employee ? `${user.employee.firstName} ${user.employee.lastName}` : (user?.username || 'Administrator')}`,
-        `Document Type: Master Institutional Directory Audit`
-      ],
-      headers,
-      rows,
-      filename: `department_directory_${getLocalDateString(new Date())}`,
-      landscape: false,
-      includeSignatures: true
-    });
+      const authorName = user?.employee 
+        ? `${user.employee.firstName} ${user.employee.lastName}` 
+        : (user?.username || 'Administrator');
+
+      generatePdfDocument({
+        title: 'Institutional Departmental Directory & Hierarchy',
+        subtitle: 'Official Organizational Structure, Leadership, and Budgetary Allocation',
+        meta: [
+          `Total Active Departments: ${departments.length} divisions`,
+          `Exported by: ${authorName}`,
+          `Document Type: Master Institutional Directory Audit`
+        ],
+        headers,
+        rows,
+        filename: `department_directory_${getLocalDateString(new Date())}`,
+        landscape: false,
+        includeSignatures: true
+      });
+    } catch (err) {
+      console.error('Failed to export department PDF:', err);
+      alert('Unable to generate PDF document. Please check console.');
+    }
+  };
+
+  const handleExportDeptCsv = () => {
+    const headers = [
+      { label: 'Department Code', key: 'code' },
+      { label: 'Department Name', key: 'name' },
+      { label: 'Head / Manager', key: 'managerName' },
+      { label: 'Annual Budget (PHP)', key: 'budget' },
+      { label: 'Description', key: 'description' },
+      { label: 'Total Staff Assigned', key: d => d.employeeCount ?? 0 }
+    ];
+    exportToCsv(`departments_directory_${getLocalDateString(new Date())}`, headers, departments);
   };
 
   return (
@@ -161,10 +195,19 @@ export default function Departments() {
             <span>Download Directory (PDF)</span>
           </button>
 
+          <button
+            onClick={handleExportDeptCsv}
+            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+            title="Download department directory as Excel CSV spreadsheet"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export CSV</span>
+          </button>
+
           {isAdmin && (
             <button
               onClick={openAddModal}
-              className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#463C4A] text-white text-xs font-medium shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#483F4B] text-white text-xs font-medium shadow-sm transition flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create Department</span>
@@ -253,7 +296,7 @@ export default function Departments() {
       </div>
 
       {/* Modal */}
-      {modalOpen && (
+      {modalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -375,7 +418,8 @@ export default function Departments() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
