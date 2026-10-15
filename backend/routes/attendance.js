@@ -6,15 +6,13 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const getTodayString = () => {
   const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
+  return new Intl.DateTimeFormat('en-CA', options).format(d);
 };
 
 const getCurrentTimeString = () => {
   const d = new Date();
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return d.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true });
 };
 
 const calculateHours = (timeInStr, timeOutStr) => {

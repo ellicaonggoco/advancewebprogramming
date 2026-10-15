@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 
 const formatDate = (d) => {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
+  return new Intl.DateTimeFormat('en-CA', options).format(d);
 };
 
 // 1. Initial Departments
@@ -155,12 +156,12 @@ const generateInitialAttendance = () => {
   const todayStr = formatDate(now);
 
   records.push(
-    { id: 'att-1', _id: 'att-1', employee: 'emp-1', date: todayStr, timeIn: '08:45 AM', timeOut: '05:05 PM', status: 'Present', workHours: 8.33, lateMinutes: 0, method: 'Web Clock-In', notes: 'Executive morning briefing', location: 'Main Office', createdAt: new Date() },
+    { id: 'att-1', _id: 'att-1', employee: 'emp-1', date: todayStr, timeIn: '08:45 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Executive morning briefing', location: 'Main Office', createdAt: new Date() },
     // emp-2 (John Herzsel Datul) is unclocked today awaiting morning shift recording
-    { id: 'att-3', _id: 'att-3', employee: 'emp-3', date: todayStr, timeIn: '08:58 AM', timeOut: '05:00 PM', status: 'Present', workHours: 8.03, lateMinutes: 0, method: 'Web Clock-In', notes: 'Database replication sync', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-4', _id: 'att-4', employee: 'emp-4', date: todayStr, timeIn: '09:18 AM', timeOut: '05:30 PM', status: 'Late', workHours: 8.20, lateMinutes: 18, method: 'Web Clock-In', notes: 'Transit delay along highway', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-5', _id: 'att-5', employee: 'emp-5', date: todayStr, timeIn: '08:40 AM', timeOut: '05:00 PM', status: 'Present', workHours: 8.33, lateMinutes: 0, method: 'Web Clock-In', notes: 'Automated test suite run', location: 'Main Office', createdAt: new Date() },
-    { id: 'att-6', _id: 'att-6', employee: 'emp-6', date: todayStr, timeIn: '08:50 AM', timeOut: '01:00 PM', status: 'Half-Day', workHours: 4.17, lateMinutes: 0, method: 'Web Clock-In', notes: 'Approved personal afternoon off', location: 'Main Office', createdAt: new Date() },
+    { id: 'att-3', _id: 'att-3', employee: 'emp-3', date: todayStr, timeIn: '08:58 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Database replication sync', location: 'Main Office', createdAt: new Date() },
+    { id: 'att-4', _id: 'att-4', employee: 'emp-4', date: todayStr, timeIn: '09:18 AM', timeOut: null, status: 'Late', workHours: 0, lateMinutes: 18, method: 'Web Clock-In', notes: 'Transit delay along highway', location: 'Main Office', createdAt: new Date() },
+    { id: 'att-5', _id: 'att-5', employee: 'emp-5', date: todayStr, timeIn: '08:40 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Automated test suite run', location: 'Main Office', createdAt: new Date() },
+    { id: 'att-6', _id: 'att-6', employee: 'emp-6', date: todayStr, timeIn: '08:50 AM', timeOut: null, status: 'Present', workHours: 0, lateMinutes: 0, method: 'Web Clock-In', notes: 'Personnel morning shift', location: 'Main Office', createdAt: new Date() },
     { id: 'att-7', _id: 'att-7', employee: 'emp-7', date: todayStr, timeIn: null, timeOut: null, status: 'On Leave', workHours: 0, lateMinutes: 0, method: 'System Auto', notes: 'Approved Vacation Leave', location: 'Main Office', createdAt: new Date() }
   );
 

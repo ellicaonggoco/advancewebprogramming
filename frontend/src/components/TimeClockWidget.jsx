@@ -195,12 +195,12 @@ export default function TimeClockWidget({ onClockEvent }) {
               </div>
 
               <div className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono text-white mt-0.5 drop-shadow-sm">
-                {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                {time.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
               </div>
 
               <div className="flex items-center gap-2 text-xs text-zinc-300 mt-1">
                 <span className="font-semibold text-zinc-200">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                  {time.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
                 <span className="text-zinc-600">•</span>
                 <div className="flex items-center gap-1 text-zinc-400 text-[11px]">
@@ -430,13 +430,13 @@ export default function TimeClockWidget({ onClockEvent }) {
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-500">Recorded Timestamp:</span>
                     <span className="font-mono font-semibold text-emerald-700 text-sm">
-                      {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                      {time.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-500">Official Date:</span>
                     <span className="font-medium text-zinc-800">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      {time.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
                 </div>
@@ -496,7 +496,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-500">Time-Out Timestamp:</span>
                     <span className="font-mono font-semibold text-red-700 text-sm">
-                      {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                      {time.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
                   <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-200/70">
@@ -559,7 +559,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                   <div className="flex items-center justify-between">
                     <span className="text-amber-900 font-medium">Overtime Time-In:</span>
                     <span className="font-mono font-bold text-amber-800 text-sm">
-                      {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                      {time.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
                   <p className="text-[11px] text-amber-900/80 pt-1 border-t border-amber-200/70">
@@ -622,7 +622,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                   <div className="flex items-center justify-between">
                     <span className="text-red-950 font-medium">Overtime Ended At:</span>
                     <span className="font-mono font-bold text-red-700 text-sm">
-                      {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                      {time.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
                   <p className="text-[11px] text-red-900/80 pt-1 border-t border-red-200/70">

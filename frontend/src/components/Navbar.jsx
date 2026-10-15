@@ -12,6 +12,7 @@ export default function Navbar({ onMenuClick, title = "Dashboard" }) {
   }, []);
 
   const formattedDate = time.toLocaleDateString('en-US', {
+    timeZone: 'Asia/Manila',
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -19,6 +20,7 @@ export default function Navbar({ onMenuClick, title = "Dashboard" }) {
   });
 
   const formattedTime = time.toLocaleTimeString('en-US', {
+    timeZone: 'Asia/Manila',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
