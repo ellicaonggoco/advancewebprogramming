@@ -750,7 +750,9 @@ router.post('/overtime-authorizations', [authenticate, authorize('admin', 'manag
   if (existing) {
     return res.status(400).json({
       success: false,
-      message: 'Overtime authorization already active for this employee today.'
+      message: allEmployees 
+        ? 'Overtime authorization is already active for the entire workforce today.' 
+        : 'Overtime authorization is already active for this employee today.'
     });
   }
 

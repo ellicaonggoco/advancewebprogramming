@@ -63,9 +63,10 @@ export default function Dashboard() {
     setOtError('');
     setOtSuccess('');
     try {
+      const isAll = otForm.allEmployees || otForm.employeeId === 'ALL';
       const res = await api.authorizeOvertime({
-        employeeId: otForm.allEmployees ? null : otForm.employeeId,
-        allEmployees: otForm.allEmployees,
+        employeeId: isAll ? null : otForm.employeeId,
+        allEmployees: isAll,
         date: getLocalDateString(new Date()),
         reason: otForm.reason,
         maxHours: otForm.maxHours
@@ -75,7 +76,7 @@ export default function Dashboard() {
       setTimeout(() => {
         setOtModalOpen(false);
         setOtSuccess('');
-      }, 1200);
+      }, 1400);
     } catch (err) {
       setOtError(err.message || 'Failed to authorize overtime');
     } finally {
@@ -126,9 +127,9 @@ export default function Dashboard() {
             <button
               onClick={() => {
                 setOtForm({
-                  employeeId: employees[0]?.id || employees[0]?._id || '',
+                  employeeId: 'ALL',
                   reason: 'Approved Operational Duty / Project Sprint',
-                  allEmployees: false,
+                  allEmployees: true,
                   maxHours: 4
                 });
                 setOtError('');
@@ -607,24 +608,98 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              {!otForm.allEmployees && (
-                <div>
-                  <label className="block text-[11px] font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                    Select Staff Member
-                  </label>
-                  <select
-                    value={otForm.employeeId}
-                    onChange={(e) => setOtForm({ ...otForm, employeeId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:bg-white"
+              {/* Target / Scope Selection */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-semibold text-zinc-700 uppercase tracking-wider">
+                  Target Staff (Saklaw ng Overtime)
+                </label>
+
+                {/* Quick Segmented Toggle */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOtForm({ ...otForm, allEmployees: true, employeeId: 'ALL' })}
+                    className={`px-3 py-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                      otForm.allEmployees || otForm.employeeId === 'ALL'
+                        ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm ring-2 ring-amber-400/40'
+                        : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                    }`}
                   >
-                    {employees.map(emp => (
-                      <option key={emp.id || emp._id} value={emp.id || emp._id}>
-                        {emp.employeeId} — {emp.firstName} {emp.lastName} ({emp.department?.name || 'Staff'})
-                      </option>
-                    ))}
+                    <Users className="w-3.5 h-3.5 text-zinc-950" />
+                    <span>To All Employees (Lahat)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const firstEmp = employees[0]?.id || employees[0]?._id || '';
+                      setOtForm({
+                        ...otForm,
+                        allEmployees: false,
+                        employeeId: otForm.employeeId === 'ALL' ? firstEmp : otForm.employeeId
+                      });
+                    }}
+                    className={`px-3 py-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                      !otForm.allEmployees && otForm.employeeId !== 'ALL'
+                        ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm ring-2 ring-amber-400/40'
+                        : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Specific Employee Lamang</span>
+                  </button>
+                </div>
+
+                {/* Dropdown with "ALL EMPLOYEES" option always prominent at top */}
+                <div>
+                  <select
+                    value={otForm.allEmployees || otForm.employeeId === 'ALL' ? 'ALL' : otForm.employeeId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'ALL') {
+                        setOtForm({ ...otForm, allEmployees: true, employeeId: 'ALL' });
+                      } else {
+                        setOtForm({ ...otForm, allEmployees: false, employeeId: val });
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 font-medium focus:ring-1 focus:ring-zinc-900 focus:bg-white"
+                  >
+                    <option value="ALL" className="font-bold text-amber-950 bg-amber-100">
+                      🏢 TO ALL EMPLOYEES / ENTIRE WORKFORCE (Lahat ng Kawani - {employees.length} Staff)
+                    </option>
+                    <optgroup label="── O pumili ng indibidwal na kawani ──">
+                      {employees.map(emp => (
+                        <option key={emp.id || emp._id} value={emp.id || emp._id}>
+                          {emp.employeeId} — {emp.firstName} {emp.lastName} ({emp.department?.name || 'Staff'})
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
-              )}
+
+                {/* Scope Confirmation Callout */}
+                {(otForm.allEmployees || otForm.employeeId === 'ALL') ? (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-950 flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-zinc-950 flex items-center justify-center shrink-0 font-bold mt-0.5">
+                      <Users className="w-3.5 h-3.5 text-zinc-950" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-zinc-900 flex items-center gap-1.5">
+                        <span>Lahat ng {employees.length} Kawani ay Bibigyan ng OT Permission</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-200 text-amber-950 font-extrabold uppercase">Workforce-Wide</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-600 mt-0.5 leading-relaxed">
+                        Hindi na kailangang isa-isahin. Awtomatikong magiging aktibo ang yellow "Record Overtime In" para sa lahat ng empleyado sa buong kumpanya.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex items-center gap-2">
+                    <UserCheck className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span className="text-[11px]">Tanging ang napiling staff member lamang ang bibigyan ng permiso mag-overtime ngayong araw.</span>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-zinc-700 uppercase tracking-wider mb-1">
@@ -638,23 +713,6 @@ export default function Dashboard() {
                   placeholder="e.g. Critical release sprint, weekend operational support..."
                   className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:bg-white"
                 />
-              </div>
-
-              <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-xs space-y-1.5">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={otForm.allEmployees}
-                    onChange={(e) => setOtForm({ ...otForm, allEmployees: e.target.checked })}
-                    className="rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
-                  />
-                  <span className="font-semibold text-zinc-800">Mandate Overtime for Entire Workforce Today</span>
-                </label>
-                <p className="text-[11px] text-zinc-500 pl-5">
-                  {otForm.allEmployees 
-                    ? 'Lahat ng empleyado sa buong kumpanya ay mabibigyan ng pahintulot na mag-overtime ngayong araw.'
-                    : 'Tanging ang napiling staff member lamang ang mabibigyan ng pahintulot.'}
-                </p>
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -671,7 +729,13 @@ export default function Dashboard() {
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-zinc-950" />
-                  <span>{otLoading ? 'Authorizing...' : 'Grant Overtime Authorization'}</span>
+                  <span>
+                    {otLoading 
+                      ? 'Authorizing...' 
+                      : (otForm.allEmployees || otForm.employeeId === 'ALL')
+                        ? 'Authorize All Employees (Lahat)'
+                        : 'Grant Overtime Authorization'}
+                  </span>
                 </button>
               </div>
             </form>
