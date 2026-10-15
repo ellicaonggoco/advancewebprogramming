@@ -5,9 +5,7 @@ import {
   Clock, 
   CalendarOff, 
   ChevronRight,
-  Calendar,
-  Download,
-  FileText
+  Calendar
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -72,21 +70,9 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <a
-            href="/SYSTEM_TESTING_GUIDE.pdf"
-            download="SYSTEM_TESTING_GUIDE.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-800 hover:to-red-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
-            title="Download complete testing & walkthrough guide PDF for you and your groupmates"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Testing Guide (PDF)</span>
-          </a>
-
-          {isAdmin && (
+        {/* Quick Actions (Admin only) */}
+        {isAdmin && (
+          <div className="flex items-center gap-2.5">
             <Link
               to="/employees"
               className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#463C4A] text-white text-xs font-medium shadow-sm transition flex items-center gap-1.5"
@@ -94,8 +80,8 @@ export default function Dashboard() {
               <Users className="w-3.5 h-3.5" />
               <span>Add Employee</span>
             </Link>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Time Clock In/Out Widget */}
