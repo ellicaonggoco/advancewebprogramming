@@ -58,10 +58,12 @@ export default function Reports() {
     loadReports();
   }, [selectedMonth, selectedYear, selectedDept]);
 
+  // Direct Print: Binubuksan yung standard browser print dialog para pwedeng i-print agad sa paper o i-save as local PDF
   const handlePrint = () => {
     window.print();
   };
 
+  // CSV Export: Kino-convert yung attendance data papuntang spreadsheet format (.csv) para madaling buksan sa Microsoft Excel o Google Sheets
   const handleExportMonthlyCsv = () => {
     const headers = [
       { label: 'Employee ID', key: 'employeeId' },
@@ -78,6 +80,7 @@ export default function Reports() {
     exportToCsv(`monthly_attendance_summary_${selectedMonth}_${selectedYear}`, headers, monthlyData);
   };
 
+  // CSV Export para sa Department Cross-Analytics
   const handleExportDeptCsv = () => {
     const headers = [
       { label: 'Department Code', key: 'departmentCode' },
@@ -92,6 +95,8 @@ export default function Reports() {
     exportToCsv(`department_attendance_analytics_${selectedMonth}_${selectedYear}`, headers, departmentData);
   };
 
+  // PDF Export: Gumagawa ng professional PDF document gamit ang jsPDF at autoTable.
+  // May official header, corporate branding, data table, summary cards, at signature section ng admin
   const handleExportMonthlyPdf = () => {
     const headers = ['Employee ID', 'Staff Member', 'Department', 'Days Worked', 'On-Time', 'Late Days', 'On Leave', 'Late Mins', 'Hours', 'Compliance'];
     const rows = monthlyData.map(r => [

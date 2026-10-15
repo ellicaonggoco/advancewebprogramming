@@ -86,9 +86,11 @@ router.post('/login', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
+    // Kunin yung in-input na email sa login (tumatanggap din if ever may legacy field)
     const rawIdentifier = (req.body.email || req.body.usernameOrEmail || '').trim();
     const { password } = req.body;
 
+    // Check muna natin kung may laman yung email field
     if (!rawIdentifier) {
       return res.status(400).json({
         success: false,
@@ -96,6 +98,8 @@ router.post('/login', [
       });
     }
 
+    // Siguraduhing totoong email format ang nilagay (dapat may @ at domain)
+    // Kapag username lang tulad ng "ellica" o "herzsel", haharangin agad dito
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(rawIdentifier)) {
       return res.status(400).json({
@@ -106,11 +110,12 @@ router.post('/login', [
 
     const searchTarget = rawIdentifier.toLowerCase();
 
-    // Authenticate strictly by registered workplace email address
+    // Hanapin yung user gamit LAMANG ang workplace email (bawal na mag-match sa username)
     const user = store.users.find(
       u => u.email.toLowerCase() === searchTarget
     );
 
+    // Kapag walang nag-match na registered corporate email sa database
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -118,6 +123,7 @@ router.post('/login', [
       });
     }
 
+    // I-compare ang password gamit ang bcrypt para laging secured at encrypted
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
@@ -126,6 +132,7 @@ router.post('/login', [
       });
     }
 
+    // Check kung active pa yung account baka deactivated na pala
     if (user.status !== 'active') {
       return res.status(403).json({
         success: false,
@@ -327,6 +334,9 @@ const handleProfileUpdate = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    // Security check para sa email:
+    // Si System Admin lang ang may karapatang magpalit ng corporate workplace email
+    // Kapag regular employee ang nagtangkang magpalit, ire-reject natin ng 403 Forbidden
     const isUserAdmin = req.user.role === 'admin';
     if (email && email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
       if (!isUserAdmin) {

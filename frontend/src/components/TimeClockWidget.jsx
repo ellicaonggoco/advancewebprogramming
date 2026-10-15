@@ -61,6 +61,8 @@ export default function TimeClockWidget({ onClockEvent }) {
     }
   }, [user]);
 
+  // Trigger para sa Regular Clock-In:
+  // Nagpapadala ng request sa backend para i-log ang start ng shift sa Asia/Manila time
   const executeClockIn = async () => {
     setConfirmModal({ open: false, type: null });
     setLoading(true);
@@ -78,6 +80,8 @@ export default function TimeClockWidget({ onClockEvent }) {
     }
   };
 
+  // Trigger para sa Regular Clock-Out:
+  // Nagpapadala ng request sa backend kung saan kusa nitong iko-compute ang kabuuang oras ng shift at status
   const executeClockOut = async () => {
     setConfirmModal({ open: false, type: null });
     setLoading(true);

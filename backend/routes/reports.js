@@ -21,6 +21,11 @@ const parseTimeToMinutes = (str) => {
   }
 };
 
+// Kinukwenta yung tamang rendered hours ng attendance record:
+// - Kapag 'On Leave', 0 hours ang credited (leave credit ang ibabawas)
+// - Kapag may workHours na naka-record (naka-clock out na), yun ang gagamitin
+// - Kapag may time-in at time-out, compute yung minutes difference divided by 60
+// - Kapag kasalukuyang naka-duty pa (time-in pero wala pang time-out), i-estimate ang shift hours minus late minutes
 const calculateRecordHours = (r) => {
   if (!r || r.status === 'On Leave') return 0;
   if (r.workHours && r.workHours > 0) return r.workHours;

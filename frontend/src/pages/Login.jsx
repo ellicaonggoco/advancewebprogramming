@@ -55,6 +55,8 @@ export default function Login() {
     }
   ];
 
+  // Pag-submit ng login form:
+  // Dito iche-check kung naka-login si user gamit ang workplace email, bawal ang username lang
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -62,11 +64,13 @@ export default function Login() {
     const trimmedEmail = (form.email || '').trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // Check kung may inilagay na email si user
     if (!trimmedEmail) {
       setError('Please enter your workplace email address.');
       return;
     }
 
+    // Siguraduhing may '@' at valid email format. Kapag username lang (e.g. 'ellica'), haharangin agad
     if (!emailRegex.test(trimmedEmail)) {
       setError('A valid workplace email address is required (e.g. name@company.com). Username-only login is disabled.');
       return;

@@ -15,6 +15,8 @@ const getCurrentTimeString = () => {
   return d.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true });
 };
 
+// Automatic computation ng render na oras sa shift:
+// Kinukwenta yung exactong agwat ng oras mula time-in hanggang time-out sa format na decimal (e.g., 8.25 hrs)
 const calculateHours = (timeInStr, timeOutStr) => {
   try {
     const parseTime = (str) => {
@@ -33,6 +35,9 @@ const calculateHours = (timeInStr, timeOutStr) => {
   }
 };
 
+// Automatic checking kung late pumasok si employee:
+// Ang standard shift start ay 9:00 AM na may 5-minute grace period (hanggang 9:05 AM).
+// Kapag lumagpas ng 9:05 AM, automatic na ima-mark as 'Late' at bibilangin ang minutes late.
 const checkLate = (timeStr) => {
   try {
     const [time, modifier] = timeStr.split(' ');
@@ -350,11 +355,18 @@ router.post('/clock-out', authenticate, (req, res) => {
     });
   }
 
+  // I-record ang official time out
   regularRecord.timeOut = nowTime;
+
+  // Dito automatic na kinukuha at kinakalkula yung rendered work hours
   const hours = calculateHours(regularRecord.timeIn, nowTime);
   regularRecord.workHours = hours;
 
-  // Evaluate status according to hours worked
+  // I-classify ang attendance status depende sa dami ng oras na na-render:
+  // - Kapag wala pang 1 oras: Incomplete Shift (hindi maka-credit dahil masyadong maikli)
+  // - Kapag 1 hanggang 3.99 oras: Undertime
+  // - Kapag 4 hanggang 7.49 oras: Half-Day
+  // - Kapag 7.5 oras pataas: Full-Day Shift (Present o Late depende sa oras ng time-in)
   if (hours < 1.0) {
     regularRecord.status = 'Incomplete Shift';
     const mins = Math.max(1, Math.round(hours * 60));
@@ -366,7 +378,7 @@ router.post('/clock-out', authenticate, (req, res) => {
     regularRecord.status = 'Half-Day';
     regularRecord.notes = `Half-Day shift credited (${hours} hrs worked).` + (notes ? ` | ${notes}` : '');
   } else {
-    // 7.5+ hours -> Full Day
+    // 7.5+ hours -> Buong araw o Full Day
     if (regularRecord.status !== 'Late') {
       regularRecord.status = 'Present';
     }

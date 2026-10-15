@@ -229,6 +229,8 @@ export default function Dashboard() {
             icon={Clock}
           />
 
+          {/* Dito kinukuha ang 'Days Present':
+              Pumasok pa rin si employee kahit na-late siya, kaya ina-add up dito ang On-Time + Late Days + Half-Days para accurate ang total days present */}
           <StatCard
             title="Days Present"
             value={`${stats?.employeeStats?.totalPresentDays ?? stats?.employeeStats?.daysWorked ?? ((stats?.employeeStats?.presentDays || 0) + (stats?.employeeStats?.lateDays || 0) + (stats?.employeeStats?.halfDays || 0))} Days`}
