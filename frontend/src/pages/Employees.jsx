@@ -10,11 +10,15 @@ import {
   Phone, 
   Building2, 
   Eye, 
+  EyeOff,
   Download,
   X,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Lock,
+  KeyRound,
+  CheckCircle2
 } from 'lucide-react';
 import { api, getLocalDateString } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +26,22 @@ import StatusBadge from '../components/StatusBadge';
 import UserAvatar from '../components/UserAvatar';
 import { exportToCsv } from '../utils/exportCsv';
 import { generatePdfDocument } from '../utils/exportPdf';
+
+const getNextEmployeeId = (list = []) => {
+  let maxId = 1000;
+  list.forEach(emp => {
+    if (emp && emp.employeeId) {
+      const match = emp.employeeId.match(/\d+/);
+      if (match) {
+        const val = parseInt(match[0], 10);
+        if (!isNaN(val) && val > maxId) {
+          maxId = val;
+        }
+      }
+    }
+  });
+  return `EMP-${maxId + 1}`;
+};
 
 export default function Employees() {
   const { user, isAdmin } = useAuth();
@@ -49,6 +69,7 @@ export default function Employees() {
   // View drawer
   const [profileModal, setProfileModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -59,9 +80,12 @@ export default function Employees() {
     phone: '',
     department: '',
     position: '',
-    salary: 80000,
+    salary: '',
     status: 'Active',
-    shift: 'Standard (9:00 AM - 5:00 PM)'
+    shift: 'Standard (9:00 AM - 5:00 PM)',
+    createAccount: true,
+    username: '',
+    password: ''
   });
 
   const loadData = async () => {
@@ -91,19 +115,24 @@ export default function Employees() {
   const openAddModal = () => {
     setIsEditing(false);
     setEditId(null);
+    const nextId = getNextEmployeeId(employees);
     setForm({
-      employeeId: `EMP-${1000 + employees.length + 1}`,
+      employeeId: nextId,
       firstName: '',
       lastName: '',
       email: '',
       phone: '+63 917 ',
       department: departments[0]?.id || departments[0]?._id || '',
       position: '',
-      salary: 80000,
+      salary: '',
       status: 'Active',
-      shift: 'Standard (9:00 AM - 5:00 PM)'
+      shift: 'Standard (9:00 AM - 5:00 PM)',
+      createAccount: true,
+      username: '',
+      password: ''
     });
     setFormError('');
+    setShowPassword(false);
     setModalOpen(true);
   };
 
@@ -124,9 +153,12 @@ export default function Employees() {
       phone: emp.phone,
       department: emp.department?.id || emp.department?._id || emp.department || '',
       position: emp.position,
-      salary: emp.salary,
+      salary: emp.salary ?? '',
       status: emp.status,
-      shift: emp.shift || 'Standard (9:00 AM - 5:00 PM)'
+      shift: emp.shift || 'Standard (9:00 AM - 5:00 PM)',
+      createAccount: false,
+      username: '',
+      password: ''
     });
     setFormError('');
     setModalOpen(true);
@@ -143,10 +175,28 @@ export default function Employees() {
     setFormError('');
 
     try {
+      if (!isEditing && form.createAccount) {
+        if (!form.username || form.username.trim().length < 3) {
+          setFormError('Account username must be at least 3 characters long.');
+          setFormLoading(false);
+          return;
+        }
+        if (!form.password || form.password.length < 6) {
+          setFormError('Account password must be at least 6 characters long.');
+          setFormLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...form,
+        salary: form.salary === '' ? 0 : parseFloat(form.salary) || 0
+      };
+
       if (isEditing) {
-        await api.updateEmployee(editId, form);
+        await api.updateEmployee(editId, payload);
       } else {
-        await api.createEmployee(form);
+        await api.createEmployee(payload);
       }
       setModalOpen(false);
       await loadData();
@@ -499,7 +549,14 @@ export default function Employees() {
                     type="text"
                     required
                     value={form.firstName}
-                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const updated = { ...form, firstName: val };
+                      if (!isEditing && form.createAccount && (!form.username || form.username === form.firstName.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
+                        updated.username = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+                      }
+                      setForm(updated);
+                    }}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
                   />
                 </div>
@@ -520,17 +577,24 @@ export default function Employees() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Employee ID
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                      Employee ID
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      Auto-Generated
+                    </span>
+                  </div>
                   <input
                     type="text"
                     required
-                    disabled={isEditing}
+                    readOnly
                     value={form.employeeId}
-                    onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs font-mono disabled:opacity-60"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 cursor-not-allowed select-none focus:outline-none"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    System sequence number ({form.employeeId}) to ensure unique IDs.
+                  </p>
                 </div>
 
                 <div>
@@ -600,10 +664,11 @@ export default function Employees() {
                   </label>
                   <input
                     type="number"
-                    required
+                    min="0"
+                    placeholder="e.g. 50000"
                     value={form.salary}
-                    onChange={(e) => setForm({ ...form, salary: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
+                    onChange={(e) => setForm({ ...form, salary: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
               </div>
@@ -637,6 +702,96 @@ export default function Employees() {
                   />
                 </div>
               </div>
+
+              {/* Login Account & Password Requirements */}
+              {!isEditing && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-amber-700" />
+                      <span className="font-bold text-xs text-amber-950">
+                        Employee Portal & Login Account
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-medium text-amber-900 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.createAccount}
+                        onChange={(e) => setForm({ ...form, createAccount: e.target.checked })}
+                        className="rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                      />
+                      <span>Create login credentials</span>
+                    </label>
+                  </div>
+
+                  {form.createAccount && (
+                    <div className="space-y-3 pt-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                            Login Username
+                          </label>
+                          <input
+                            type="text"
+                            required={form.createAccount}
+                            value={form.username}
+                            onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase().replace(/\s+/g, '') })}
+                            placeholder="e.g. diether"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                            Portal Password
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showPassword ? 'text' : 'password'}
+                              required={form.createAccount}
+                              value={form.password}
+                              onChange={(e) => setForm({ ...form, password: e.target.value })}
+                              placeholder="Min 6 characters"
+                              className="w-full px-3 py-2 pr-8 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 font-mono"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Password Requirements Checklist */}
+                      <div className="p-2.5 rounded-xl bg-white/90 border border-amber-200/60 text-[11px] space-y-1">
+                        <div className="font-semibold text-slate-700 flex items-center justify-between text-[11px]">
+                          <span>Password Minimum Requirements:</span>
+                          <span className={form.password.length >= 6 ? 'text-emerald-700 font-bold' : 'text-amber-800 font-medium'}>
+                            {form.password.length}/6 characters
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-[10px] pt-0.5">
+                          <span className={`inline-flex items-center gap-1 font-medium ${form.password.length >= 6 ? 'text-emerald-700 font-bold' : 'text-slate-400'}`}>
+                            <CheckCircle2 className={`w-3 h-3 ${form.password.length >= 6 ? 'text-emerald-600' : 'text-slate-300'}`} />
+                            Minimum 6 characters (Required)
+                          </span>
+                          <span className={`inline-flex items-center gap-1 font-medium ${/\d/.test(form.password) ? 'text-emerald-700 font-bold' : 'text-slate-400'}`}>
+                            <CheckCircle2 className={`w-3 h-3 ${/\d/.test(form.password) ? 'text-emerald-600' : 'text-slate-300'}`} />
+                            Includes at least 1 number
+                          </span>
+                          <span className={`inline-flex items-center gap-1 font-medium ${/[a-zA-Z]/.test(form.password) ? 'text-emerald-700 font-bold' : 'text-slate-400'}`}>
+                            <CheckCircle2 className={`w-3 h-3 ${/[a-zA-Z]/.test(form.password) ? 'text-emerald-600' : 'text-slate-300'}`} />
+                            Includes letters
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button

@@ -462,6 +462,26 @@ export default function Login() {
                     </div>
                   </div>
 
+                  {/* Password Requirements Checklist */}
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                    <div className="font-semibold text-slate-700 flex items-center justify-between text-[11px]">
+                      <span>Password Minimum Requirements:</span>
+                      <span className={newPassword.length >= 6 ? 'text-emerald-700 font-bold' : 'text-slate-500'}>
+                        {newPassword.length}/6 characters
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 text-[11px]">
+                      <span className={`inline-flex items-center gap-1.5 ${newPassword.length >= 6 ? 'text-emerald-700 font-semibold' : 'text-slate-400'}`}>
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${newPassword.length >= 6 ? 'text-emerald-600' : 'text-slate-300'}`} />
+                        At least 6 characters (Required)
+                      </span>
+                      <span className={`inline-flex items-center gap-1.5 ${confirmPassword && newPassword === confirmPassword ? 'text-emerald-700 font-semibold' : 'text-slate-400'}`}>
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${confirmPassword && newPassword === confirmPassword ? 'text-emerald-600' : 'text-slate-300'}`} />
+                        Passwords match exactly
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-3 pt-2">
                     <button
                       type="button"

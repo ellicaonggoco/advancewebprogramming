@@ -603,10 +603,27 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400">
-                All passwords must be at least 6 characters in length.
-              </span>
+            {/* Password Requirements Checklist */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+              <div className="font-semibold text-slate-700 flex items-center justify-between text-[11px]">
+                <span>Password Minimum Requirements:</span>
+                <span className={passwordForm.newPassword.length >= 6 ? 'text-emerald-700 font-bold' : 'text-slate-500'}>
+                  {passwordForm.newPassword.length}/6 characters
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[11px]">
+                <span className={`inline-flex items-center gap-1.5 ${passwordForm.newPassword.length >= 6 ? 'text-emerald-700 font-semibold' : 'text-slate-400'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${passwordForm.newPassword.length >= 6 ? 'text-emerald-600' : 'text-slate-300'}`} />
+                  At least 6 characters (Required)
+                </span>
+                <span className={`inline-flex items-center gap-1.5 ${passwordForm.confirmPassword && passwordForm.newPassword === passwordForm.confirmPassword ? 'text-emerald-700 font-semibold' : 'text-slate-400'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${passwordForm.confirmPassword && passwordForm.newPassword === passwordForm.confirmPassword ? 'text-emerald-600' : 'text-slate-300'}`} />
+                  Passwords match exactly
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
               <button
                 type="submit"
                 disabled={passwordLoading}

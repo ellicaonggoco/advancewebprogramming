@@ -59,7 +59,7 @@ export default function Departments() {
       code: '',
       description: '',
       managerName: '',
-      budget: 300000
+      budget: ''
     });
     setFormError('');
     setModalOpen(true);
@@ -73,7 +73,7 @@ export default function Departments() {
       code: dept.code,
       description: dept.description || '',
       managerName: dept.managerName || '',
-      budget: dept.budget || 0
+      budget: dept.budget ?? ''
     });
     setFormError('');
     setModalOpen(true);
@@ -85,10 +85,15 @@ export default function Departments() {
     setFormError('');
 
     try {
+      const payload = {
+        ...form,
+        budget: form.budget === '' ? 0 : parseFloat(form.budget) || 0
+      };
+
       if (isEditing) {
-        await api.updateDepartment(editId, form);
+        await api.updateDepartment(editId, payload);
       } else {
-        await api.createDepartment(form);
+        await api.createDepartment(payload);
       }
       setModalOpen(false);
       await loadDepartments();
@@ -306,9 +311,11 @@ export default function Departments() {
                   </label>
                   <input
                     type="number"
+                    min="0"
+                    placeholder="e.g. 300000"
                     value={form.budget}
-                    onChange={(e) => setForm({ ...form, budget: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs"
+                    onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
               </div>

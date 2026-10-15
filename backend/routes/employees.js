@@ -82,6 +82,8 @@ router.get('/:id', authenticate, (req, res) => {
   });
 });
 
+const bcrypt = require('bcryptjs');
+
 // @route   POST /api/employees
 // @desc    Create new employee (Admin/Manager)
 router.post('/', [
@@ -95,7 +97,7 @@ router.post('/', [
   body('department').notEmpty().withMessage('Department is required'),
   body('position').trim().notEmpty().withMessage('Position is required'),
   body('salary').isNumeric().withMessage('Valid salary is required'),
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ success: false, errors: errors.array() });
@@ -103,12 +105,24 @@ router.post('/', [
 
   const {
     employeeId, firstName, lastName, email, phone,
-    department, position, hireDate, salary, status, shift, avatar
+    department, position, hireDate, salary, status, shift, avatar,
+    createAccount, username, password
   } = req.body;
 
-  const finalEmpId = (employeeId && employeeId.trim()) 
-    ? employeeId.trim() 
-    : `EMP-${1000 + store.employees.length + 1}`;
+  let finalEmpId = employeeId && employeeId.trim();
+  if (!finalEmpId) {
+    let maxNum = 1000;
+    store.employees.forEach(e => {
+      if (e.employeeId) {
+        const match = e.employeeId.match(/\d+/);
+        if (match) {
+          const num = parseInt(match[0], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+    });
+    finalEmpId = `EMP-${maxNum + 1}`;
+  }
 
   const existing = store.employees.find(
     e => e.employeeId.toLowerCase() === finalEmpId.toLowerCase() || e.email.toLowerCase() === email.toLowerCase()
@@ -119,6 +133,43 @@ router.post('/', [
       success: false,
       message: 'An employee with this Employee ID or Email already exists.'
     });
+  }
+
+  // If user login account requested
+  let newUser = null;
+  if (createAccount && username && password) {
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    const cleanUsername = username.trim().toLowerCase();
+    const existingUser = store.users.find(
+      u => u.username.toLowerCase() === cleanUsername || u.email.toLowerCase() === email.toLowerCase()
+    );
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: `An account with username "${cleanUsername}" or email "${email}" already exists.`
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newUserId = `user-${Date.now()}`;
+    newUser = {
+      id: newUserId,
+      _id: newUserId,
+      username: cleanUsername,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: 'employee',
+      employee: null,
+      status: 'active',
+      createdAt: new Date()
+    };
   }
 
   const newId = `emp-${Date.now()}`;
@@ -142,16 +193,34 @@ router.post('/', [
 
   store.employees.push(newEmp);
 
+  if (newUser) {
+    newUser.employee = newId;
+    store.users.push(newUser);
+  }
+
+  // Sync to MongoDB Atlas if connected
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState === 1) {
+    const db = mongoose.connection.db;
+    await db.collection('employees').insertOne(newEmp).catch(() => {});
+    if (newUser) {
+      await db.collection('users').insertOne(newUser).catch(() => {});
+    }
+  }
+
   const dept = store.departments.find(d => d.id === department || d._id === department);
   const populated = {
     ...newEmp,
     department: dept ? { _id: dept.id, id: dept.id, name: dept.name, code: dept.code } : null,
-    fullName: `${firstName} ${lastName}`
+    fullName: `${firstName} ${lastName}`,
+    userAccount: newUser ? { username: newUser.username, role: newUser.role } : null
   };
 
   res.status(201).json({
     success: true,
-    message: 'Employee created successfully',
+    message: newUser 
+      ? `Employee ${finalEmpId} and portal login account (@${newUser.username}) created successfully.`
+      : `Employee ${finalEmpId} created successfully.`,
     data: populated
   });
 });

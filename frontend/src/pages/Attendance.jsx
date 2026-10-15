@@ -196,10 +196,16 @@ export default function Attendance() {
     setFormError('');
 
     try {
+      const payload = {
+        ...form,
+        workHours: form.workHours === '' ? 0 : parseFloat(form.workHours) || 0,
+        lateMinutes: form.lateMinutes === '' ? 0 : parseInt(form.lateMinutes) || 0
+      };
+
       if (isEditing) {
-        await api.updateAttendance(editId, form);
+        await api.updateAttendance(editId, payload);
       } else {
-        await api.createManualAttendance(form);
+        await api.createManualAttendance(payload);
       }
       setModalOpen(false);
       await loadData();
@@ -1159,9 +1165,11 @@ export default function Attendance() {
                   <input
                     type="number"
                     step="0.1"
+                    min="0"
+                    placeholder="e.g. 8.0"
                     value={form.workHours}
-                    onChange={(e) => setForm({ ...form, workHours: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs"
+                    onChange={(e) => setForm({ ...form, workHours: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
 
@@ -1171,9 +1179,11 @@ export default function Attendance() {
                   </label>
                   <input
                     type="number"
+                    min="0"
+                    placeholder="0"
                     value={form.lateMinutes}
-                    onChange={(e) => setForm({ ...form, lateMinutes: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs"
+                    onChange={(e) => setForm({ ...form, lateMinutes: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
               </div>
