@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Users, 
   Search, 
@@ -18,11 +19,13 @@ import {
 import { api, getLocalDateString } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
+import UserAvatar from '../components/UserAvatar';
 import { exportToCsv } from '../utils/exportCsv';
 import { generatePdfDocument } from '../utils/exportPdf';
 
 export default function Employees() {
   const { user, isAdmin } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +106,12 @@ export default function Employees() {
     setFormError('');
     setModalOpen(true);
   };
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new' && !loading) {
+      openAddModal();
+    }
+  }, [searchParams, loading]);
 
   const openEditModal = (emp) => {
     setIsEditing(true);

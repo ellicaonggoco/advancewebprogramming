@@ -144,7 +144,7 @@ export default function Dashboard() {
             </button>
 
             <Link
-              to="/employees"
+              to="/employees?action=new"
               className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#463C4A] text-white text-xs font-medium shadow-sm transition flex items-center gap-1.5"
             >
               <Users className="w-3.5 h-3.5" />

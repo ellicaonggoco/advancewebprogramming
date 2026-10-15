@@ -15,6 +15,8 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import { useAuth } from './context/AuthContext';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 function AppLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
@@ -45,7 +47,9 @@ function AppLayout({ children }) {
           title={getPageTitle(location.pathname)} 
         />
         <main className="flex-1 pb-12">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
