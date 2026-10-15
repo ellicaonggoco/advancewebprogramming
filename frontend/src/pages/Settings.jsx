@@ -465,17 +465,37 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1.5">Workplace Email Address</label>
+                  <label className="block text-slate-700 font-semibold mb-1.5 flex items-center justify-between">
+                    <span>Workplace Email Address</span>
+                    {!isAdmin && (
+                      <span className="text-[10px] font-semibold text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        <Lock className="w-2.5 h-2.5 text-slate-400" />
+                        Admin Managed
+                      </span>
+                    )}
+                  </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="email"
                       required
+                      disabled={!isAdmin}
+                      readOnly={!isAdmin}
                       value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
+                      onChange={(e) => isAdmin && setProfileForm({ ...profileForm, email: e.target.value })}
+                      className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-slate-900 transition ${
+                        !isAdmin 
+                          ? 'bg-slate-100/80 border-slate-200 text-slate-500 cursor-not-allowed select-none' 
+                          : 'bg-slate-50 border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B]'
+                      }`}
+                      title={!isAdmin ? 'Workplace email can only be modified by the System Administrator.' : ''}
                     />
                   </div>
+                  {!isAdmin && (
+                    <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                      Institutional email is restricted. Contact your System Administrator to request an email update.
+                    </p>
+                  )}
                 </div>
 
                 <div>

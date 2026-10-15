@@ -293,7 +293,14 @@ const handleProfileUpdate = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (email && email !== user.email) {
+    const isUserAdmin = req.user.role === 'admin';
+    if (email && email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
+      if (!isUserAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bawal palitan ang workplace email address: Only the System Administrator is authorized to modify workplace email addresses.'
+        });
+      }
       user.email = email.toLowerCase().trim();
     }
 
@@ -309,7 +316,7 @@ const handleProfileUpdate = async (req, res, next) => {
         if (firstName) emp.firstName = firstName.trim();
         if (lastName) emp.lastName = lastName.trim();
         if (phone) emp.phone = phone.trim();
-        if (email) emp.email = email.toLowerCase().trim();
+        if (email && isUserAdmin) emp.email = email.toLowerCase().trim();
         if (bio !== undefined) emp.bio = bio;
         if (avatar !== undefined) emp.avatar = avatar;
         updatedEmp = emp;

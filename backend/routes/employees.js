@@ -247,8 +247,14 @@ router.put('/:id', [
   const current = store.employees[index];
   Object.assign(current, req.body);
   if (req.body.salary !== undefined) current.salary = Number(req.body.salary);
-
   store.employees[index] = current;
+
+  if (req.body.email) {
+    const linkedUser = store.users.find(u => u.employee === current.id || u.employee === current._id);
+    if (linkedUser) {
+      linkedUser.email = req.body.email.toLowerCase().trim();
+    }
+  }
 
   const dept = store.departments.find(d => d.id === current.department || d._id === current.department);
   const populated = {
