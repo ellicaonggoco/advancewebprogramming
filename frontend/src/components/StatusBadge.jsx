@@ -59,10 +59,10 @@ export default function StatusBadge({ status, lateMinutes, size = 'sm' }) {
       label: 'On Leave',
     },
     Overtime: {
-      dot: 'bg-indigo-500',
-      bg: 'bg-indigo-50/70',
-      text: 'text-indigo-800',
-      border: 'border-indigo-200/60',
+      dot: 'bg-amber-500',
+      bg: 'bg-amber-50/80',
+      text: 'text-amber-900',
+      border: 'border-amber-200',
       label: 'Overtime (OT)',
     },
     Absent: {

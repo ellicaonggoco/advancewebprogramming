@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, LogIn, LogOut, CheckCircle2, AlertCircle, MapPin, RotateCcw, X, ShieldAlert, Sparkles, Award } from 'lucide-react';
+import { Clock, LogIn, LogOut, CheckCircle2, AlertCircle, MapPin, RotateCcw, X, ShieldAlert, Timer, Award } from 'lucide-react';
 import { api, getLocalDateString } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -164,7 +164,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                 <button
                   onClick={() => setConfirmModal({ open: true, type: 'clockIn' })}
                   disabled={loading}
-                  className="group relative w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:via-emerald-500 hover:to-teal-500 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3.5 shadow-xl shadow-emerald-950/70 ring-4 ring-emerald-500/25 hover:ring-emerald-400/50 hover:scale-[1.02] active:scale-[0.98]"
+                  className="group relative w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3.5 shadow-xl shadow-emerald-950/70 ring-4 ring-emerald-500/25 hover:ring-emerald-400/50 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <div className="w-9 h-9 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center shrink-0 transition-all shadow-inner">
                     <LogIn className="w-5 h-5 text-white stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
@@ -174,7 +174,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                       {loading ? 'Recording Time-In...' : 'Record Time-In'}
                     </div>
                     <div className="text-[10px] sm:text-[11px] text-emerald-100/90 font-medium tracking-normal">
-                      Tap to clock-in for today's regular shift
+                      Standard Shift Attendance (9:00 AM – 5:00 PM)
                     </div>
                   </div>
                 </button>
@@ -191,7 +191,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                   <button
                     onClick={() => setConfirmModal({ open: true, type: 'clockOut' })}
                     disabled={loading}
-                    className="group relative flex-1 sm:flex-initial px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-600 to-red-600 hover:from-amber-400 hover:via-rose-500 hover:to-red-500 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3.5 shadow-xl shadow-rose-950/70 ring-4 ring-rose-500/25 hover:ring-rose-400/50 hover:scale-[1.02] active:scale-[0.98]"
+                    className="group relative flex-1 sm:flex-initial px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:via-rose-500 hover:to-red-600 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3.5 shadow-xl shadow-red-950/70 ring-4 ring-red-500/25 hover:ring-red-400/50 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <div className="w-9 h-9 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center shrink-0 transition-all shadow-inner">
                       <LogOut className="w-5 h-5 text-white stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
@@ -201,7 +201,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                         {loading ? 'Recording Time-Out...' : 'Record Time-Out'}
                       </div>
                       <div className="text-[10px] sm:text-[11px] text-rose-100/90 font-medium tracking-normal">
-                        End and finalize today's shift (Permanent)
+                        End of Regular Shift
                       </div>
                     </div>
                   </button>
@@ -218,8 +218,8 @@ export default function TimeClockWidget({ onClockEvent }) {
                   </div>
 
                   {todayOtRecord?.timeOut && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/70 border border-indigo-500/40 text-indigo-300 text-[11px] font-semibold tracking-wide shadow-sm">
-                      <Sparkles className="w-3 h-3 text-indigo-400" />
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/40 text-amber-300 text-[11px] font-semibold tracking-wide shadow-sm">
+                      <Timer className="w-3.5 h-3.5 text-amber-400" />
                       <span>Overtime: {todayOtRecord.workHours}h ({todayOtRecord.timeIn} → {todayOtRecord.timeOut})</span>
                     </div>
                   )}
@@ -232,17 +232,17 @@ export default function TimeClockWidget({ onClockEvent }) {
                     <button
                       onClick={() => setConfirmModal({ open: true, type: 'clockInOt' })}
                       disabled={loading}
-                      className="group relative px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-500 hover:via-indigo-600 hover:to-purple-600 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-3 shadow-lg shadow-indigo-950/70 ring-4 ring-indigo-500/20 hover:scale-[1.02] active:scale-[0.98]"
+                      className="group relative px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-400 text-zinc-950 font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-3 shadow-xl shadow-amber-950/50 ring-4 ring-amber-400/25 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      <div className="w-8 h-8 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center shrink-0 transition-all">
-                        <Sparkles className="w-4 h-4 text-[#DFC090]" />
+                      <div className="w-8 h-8 rounded-xl bg-black/10 group-hover:bg-black/15 flex items-center justify-center shrink-0 transition-all shadow-inner">
+                        <Timer className="w-4 h-4 text-zinc-950 stroke-[2.2]" />
                       </div>
                       <div className="text-left">
                         <div className="text-xs sm:text-sm font-extrabold leading-tight">
-                          Clock In for Overtime (OT)
+                          Record Overtime In
                         </div>
-                        <div className="text-[10px] text-indigo-200 font-medium">
-                          Extended duty • Keeps earlier shift safely saved
+                        <div className="text-[10px] text-zinc-900/80 font-medium">
+                          Authorized Overtime Duty
                         </div>
                       </div>
                     </button>
@@ -250,8 +250,8 @@ export default function TimeClockWidget({ onClockEvent }) {
                 ) : !todayOtRecord?.timeOut ? (
                   /* User is currently ON OVERTIME SHIFT */
                   <div className="flex flex-col items-stretch sm:items-end gap-2 w-full sm:w-auto">
-                    <div className="flex items-center gap-2 text-xs text-indigo-300">
-                      <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                    <div className="flex items-center gap-2 text-xs text-amber-300">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                       <span>Active Overtime Session • Clocked in at <strong className="font-mono text-white">{todayOtRecord.timeIn}</strong></span>
                     </div>
 
@@ -259,17 +259,17 @@ export default function TimeClockWidget({ onClockEvent }) {
                       <button
                         onClick={() => setConfirmModal({ open: true, type: 'clockOutOt' })}
                         disabled={loading}
-                        className="group relative flex-1 sm:flex-initial px-7 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-600 to-rose-600 hover:from-indigo-400 hover:via-purple-500 hover:to-rose-500 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-purple-950/70 ring-4 ring-purple-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                        className="group relative flex-1 sm:flex-initial px-7 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:via-rose-500 hover:to-red-600 text-white font-bold tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-red-950/70 ring-4 ring-red-500/25 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <div className="w-8 h-8 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center shrink-0">
-                          <LogOut className="w-4 h-4 text-white" />
+                          <LogOut className="w-4 h-4 text-white stroke-[2.2]" />
                         </div>
                         <div className="text-left">
                           <div className="text-xs sm:text-sm font-extrabold leading-tight">
-                            Record Overtime Time-Out
+                            Record Overtime Out
                           </div>
-                          <div className="text-[10px] text-purple-200 font-medium">
-                            Finalize OT duty & compute hours
+                          <div className="text-[10px] text-red-100/90 font-medium">
+                            End of Overtime Duty
                           </div>
                         </div>
                       </button>
@@ -413,12 +413,12 @@ export default function TimeClockWidget({ onClockEvent }) {
             {confirmModal.type === 'clockOut' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                    <LogOut className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                    <LogOut className="w-5 h-5 text-red-600" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-zinc-900">Confirm Shift Time-Out</h3>
-                    <p className="text-xs text-zinc-500">2nd Verification • End of Shift</p>
+                    <p className="text-xs text-zinc-500">2nd Verification • End of Regular Shift</p>
                   </div>
                 </div>
 
@@ -429,12 +429,12 @@ export default function TimeClockWidget({ onClockEvent }) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-500">Time-Out Timestamp:</span>
-                    <span className="font-mono font-semibold text-amber-700 text-sm">
+                    <span className="font-mono font-semibold text-red-700 text-sm">
                       {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
                   <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-200/70">
-                    Confirming will permanently finalize your shift duration and commit it to institutional attendance history.
+                    Confirming will record your shift departure and compute total hours worked today.
                   </p>
                 </div>
 
@@ -463,7 +463,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                     type="button"
                     onClick={executeClockOut}
                     disabled={loading}
-                    className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer flex items-center gap-1.5"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>{loading ? 'Confirming...' : 'Yes, Confirm Time-Out'}</span>
@@ -476,28 +476,28 @@ export default function TimeClockWidget({ onClockEvent }) {
             {confirmModal.type === 'clockInOt' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                    <Timer className="w-5 h-5 text-amber-700" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-zinc-900">Clock In for Overtime (OT)</h3>
-                    <p className="text-xs text-zinc-500">2nd Verification • Workplace Overtime Duty</p>
+                    <h3 className="text-base font-bold text-zinc-900">Record Overtime Time-In</h3>
+                    <p className="text-xs text-zinc-500">2nd Verification • Authorized Overtime Duty</p>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80 space-y-2 text-xs">
+                <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-indigo-900 font-medium">Regular Shift Status:</span>
-                    <span className="font-semibold text-emerald-700">Completed & Saved ({todayRecord?.timeIn} – {todayRecord?.timeOut})</span>
+                    <span className="text-amber-900 font-medium">Regular Shift:</span>
+                    <span className="font-semibold text-emerald-700">Completed ({todayRecord?.timeIn} – {todayRecord?.timeOut})</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-indigo-900 font-medium">Overtime Time-In:</span>
-                    <span className="font-mono font-bold text-indigo-700 text-sm">
+                    <span className="text-amber-900 font-medium">Overtime Time-In:</span>
+                    <span className="font-mono font-bold text-amber-800 text-sm">
                       {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
-                  <p className="text-[11px] text-indigo-800/80 pt-1 border-t border-indigo-200/70">
-                    Your previous regular shift remains 100% saved in the timeline. This starts a separate Overtime entry for additional duty.
+                  <p className="text-[11px] text-amber-900/80 pt-1 border-t border-amber-200/70">
+                    This records a dedicated Overtime session for additional duty. Your earlier regular shift is preserved in full.
                   </p>
                 </div>
 
@@ -526,10 +526,10 @@ export default function TimeClockWidget({ onClockEvent }) {
                     type="button"
                     onClick={executeClockInOt}
                     disabled={loading}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{loading ? 'Confirming...' : 'Yes, Clock In for Overtime'}</span>
+                    <Timer className="w-3.5 h-3.5 text-zinc-950" />
+                    <span>{loading ? 'Confirming...' : 'Yes, Record Overtime In'}</span>
                   </button>
                 </div>
               </div>
@@ -539,8 +539,8 @@ export default function TimeClockWidget({ onClockEvent }) {
             {confirmModal.type === 'clockOutOt' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                    <LogOut className="w-5 h-5 text-purple-600" />
+                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                    <LogOut className="w-5 h-5 text-red-600" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-zinc-900">Confirm Overtime Time-Out</h3>
@@ -548,18 +548,18 @@ export default function TimeClockWidget({ onClockEvent }) {
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-2 text-xs">
+                <div className="p-3.5 rounded-xl bg-red-50/70 border border-red-200/80 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-purple-900 font-medium">Overtime Started At:</span>
-                    <span className="font-mono font-medium text-purple-950">{todayOtRecord?.timeIn || '—'}</span>
+                    <span className="text-red-950 font-medium">Overtime Started At:</span>
+                    <span className="font-mono font-medium text-red-950">{todayOtRecord?.timeIn || '—'}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-purple-900 font-medium">Overtime Ended At:</span>
-                    <span className="font-mono font-bold text-purple-800 text-sm">
+                    <span className="text-red-950 font-medium">Overtime Ended At:</span>
+                    <span className="font-mono font-bold text-red-700 text-sm">
                       {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </span>
                   </div>
-                  <p className="text-[11px] text-purple-800/80 pt-1 border-t border-purple-200/70">
+                  <p className="text-[11px] text-red-900/80 pt-1 border-t border-red-200/70">
                     Overtime duration will be computed and credited to your official attendance records.
                   </p>
                 </div>
@@ -589,7 +589,7 @@ export default function TimeClockWidget({ onClockEvent }) {
                     type="button"
                     onClick={executeClockOut}
                     disabled={loading}
-                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer flex items-center gap-1.5"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>{loading ? 'Confirming...' : 'Yes, Confirm OT Time-Out'}</span>
