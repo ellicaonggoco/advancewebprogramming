@@ -71,6 +71,14 @@ export const api = {
   updateAttendance: (id, record) => request(`/attendance/${id}`, { method: 'PUT', body: JSON.stringify(record) }),
   deleteAttendance: (id) => request(`/attendance/${id}`, { method: 'DELETE' }),
 
+  // Overtime Authorizations (Admin Mandates)
+  getOvertimeAuthorizations: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/attendance/overtime-authorizations${query ? `?${query}` : ''}`);
+  },
+  authorizeOvertime: (payload) => request('/attendance/overtime-authorizations', { method: 'POST', body: JSON.stringify(payload) }),
+  revokeOvertimeAuth: (id) => request(`/attendance/overtime-authorizations/${id}`, { method: 'DELETE' }),
+
   // Attendance Adjustments (Time Corrections)
   getAdjustments: (params = {}) => {
     const query = new URLSearchParams(params).toString();

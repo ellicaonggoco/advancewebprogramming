@@ -187,12 +187,31 @@ router.post('/clock-in', authenticate, (req, res) => {
   const regularRecord = todayRecords.find(a => a.session !== 'Overtime' && a.status !== 'Overtime');
   const otRecord = todayRecords.find(a => a.session === 'Overtime' || a.status === 'Overtime');
 
-  // Handle Overtime Punch-In (preserves earlier regular shift permanently)
+  // Handle Overtime Punch-In (Requires Mandatory Admin Authorization)
   if (isOvertime) {
     if (otRecord && !otRecord.timeOut) {
       return res.status(400).json({
         success: false,
         message: `Already clocked in for Overtime session today at ${otRecord.timeIn}`
+      });
+    }
+
+    // MANDATORY OVERTIME PERMISSION CHECK:
+    // Employee cannot clock in for Overtime unless authorized/mandated by an Administrator for today
+    if (!store.overtimeAuthorizations) {
+      store.overtimeAuthorizations = [];
+    }
+
+    const hasAuth = store.overtimeAuthorizations.find(a => 
+      (a.employee === targetEmpId || a.employeeId === targetEmpId || a.allEmployees === true) &&
+      a.date === today &&
+      a.status === 'Authorized'
+    );
+
+    if (!hasAuth) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bawal mag-Overtime nang walang pahintulot: Overtime duty requires prior official authorization from the Administrator.'
       });
     }
 
@@ -207,8 +226,8 @@ router.post('/clock-in', authenticate, (req, res) => {
       session: 'Overtime',
       workHours: 0,
       lateMinutes: 0,
-      method: method || 'Overtime Clock-In',
-      notes: notes ? `Overtime / Extended Duty: ${notes}` : 'Approved Overtime / Extended Duty Shift',
+      method: method || 'Authorized Overtime Clock-In',
+      notes: notes ? `Authorized Overtime: ${notes}` : `Authorized Overtime Shift (Permitted by ${hasAuth.authorizedBy || 'Admin'})`,
       location: location || 'Main Office',
       createdAt: new Date()
     };
@@ -217,7 +236,7 @@ router.post('/clock-in', authenticate, (req, res) => {
     const populated = store.getPopulatedAttendance().find(a => a.id === newOtRecord.id || a._id === newOtRecord.id);
     return res.status(200).json({
       success: true,
-      message: `Overtime Shift clocked in successfully at ${nowTime} (Regular shift remains safely saved).`,
+      message: `Overtime Shift clocked in successfully at ${nowTime} (Authorized by ${hasAuth.authorizedBy || 'Admin'}).`,
       data: populated
     });
   }
@@ -658,6 +677,128 @@ router.delete('/adjustments/:id', authenticate, (req, res) => {
   res.json({
     success: true,
     message: 'Attendance adjustment request cancelled successfully.'
+  });
+});
+
+// ==========================================
+// OVERTIME AUTHORIZATIONS & MANDATES (ADMIN)
+// ==========================================
+
+// @route   GET /api/attendance/overtime-authorizations
+// @desc    Get overtime authorizations for a given date or employee
+router.get('/overtime-authorizations', authenticate, (req, res) => {
+  const { date, employeeId } = req.query;
+  const today = date || getTodayString();
+
+  if (!store.overtimeAuthorizations) {
+    store.overtimeAuthorizations = [];
+  }
+
+  let list = store.getPopulatedOvertimeAuthorizations();
+
+  if (today) {
+    list = list.filter(a => a.date === today);
+  }
+
+  if (employeeId) {
+    list = list.filter(a => {
+      const eId = a.employee?.id || a.employee?._id || a.employee;
+      return eId === employeeId || a.allEmployees === true;
+    });
+  }
+
+  // If non-admin, only show their own
+  if (req.user.role !== 'admin') {
+    const myEmpId = req.user.employee ? (req.user.employee.id || req.user.employee._id) : null;
+    list = list.filter(a => {
+      const eId = a.employee?.id || a.employee?._id || a.employee;
+      return eId === myEmpId || a.allEmployees === true;
+    });
+  }
+
+  res.json({
+    success: true,
+    data: list
+  });
+});
+
+// @route   POST /api/attendance/overtime-authorizations
+// @desc    Admin authorizes/mandates overtime for employee(s)
+router.post('/overtime-authorizations', [authenticate, authorize('admin', 'manager')], (req, res) => {
+  const { employeeId, date, reason, maxHours, allEmployees } = req.body;
+  const today = date || getTodayString();
+
+  if (!allEmployees && !employeeId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please specify employee to authorize for overtime.'
+    });
+  }
+
+  if (!store.overtimeAuthorizations) {
+    store.overtimeAuthorizations = [];
+  }
+
+  // Check if already authorized
+  const existing = store.overtimeAuthorizations.find(a => 
+    (allEmployees ? a.allEmployees : (a.employee === employeeId || a.employeeId === employeeId)) &&
+    a.date === today &&
+    a.status === 'Authorized'
+  );
+
+  if (existing) {
+    return res.status(400).json({
+      success: false,
+      message: 'Overtime authorization already active for this employee today.'
+    });
+  }
+
+  const adminName = req.user.employee 
+    ? `${req.user.employee.firstName} ${req.user.employee.lastName} (Admin)`
+    : `${req.user.username} (Admin)`;
+
+  const newAuth = {
+    id: `ot-auth-${Date.now()}`,
+    _id: `ot-auth-${Date.now()}`,
+    employee: allEmployees ? null : employeeId,
+    allEmployees: Boolean(allEmployees),
+    date: today,
+    authorizedBy: adminName,
+    reason: reason || 'Approved Operational Duty / Production Deployment',
+    maxHours: Number(maxHours) || 4,
+    status: 'Authorized',
+    createdAt: new Date()
+  };
+
+  store.overtimeAuthorizations.push(newAuth);
+  const populated = store.getPopulatedOvertimeAuthorizations().find(a => a.id === newAuth.id);
+
+  res.status(201).json({
+    success: true,
+    message: allEmployees 
+      ? `Overtime mandated and authorized for all employees for ${today}.`
+      : `Overtime duty authorized successfully for ${today}.`,
+    data: populated
+  });
+});
+
+// @route   DELETE /api/attendance/overtime-authorizations/:id
+// @desc    Admin revokes an overtime authorization
+router.delete('/overtime-authorizations/:id', [authenticate, authorize('admin', 'manager')], (req, res) => {
+  if (!store.overtimeAuthorizations) {
+    store.overtimeAuthorizations = [];
+  }
+
+  const index = store.overtimeAuthorizations.findIndex(a => a.id === req.params.id || a._id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Authorization record not found' });
+  }
+
+  store.overtimeAuthorizations.splice(index, 1);
+
+  res.json({
+    success: true,
+    message: 'Overtime authorization revoked successfully.'
   });
 });
 

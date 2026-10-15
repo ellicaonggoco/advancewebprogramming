@@ -291,6 +291,7 @@ const store = {
   attendance: generateInitialAttendance(),
   leaves: [...initialLeaves],
   adjustments: [...initialAdjustments],
+  overtimeAuthorizations: [],
 
   getPopulatedEmployees() {
     return this.employees.map(emp => {
@@ -357,6 +358,17 @@ const store = {
       const emp = populatedEmps.find(e => e.id === adj.employee || e._id === adj.employee);
       return {
         ...adj,
+        employee: emp || null
+      };
+    });
+  },
+
+  getPopulatedOvertimeAuthorizations() {
+    const populatedEmps = this.getPopulatedEmployees();
+    return (this.overtimeAuthorizations || []).map(auth => {
+      const emp = populatedEmps.find(e => e.id === auth.employee || e._id === auth.employee);
+      return {
+        ...auth,
         employee: emp || null
       };
     });
