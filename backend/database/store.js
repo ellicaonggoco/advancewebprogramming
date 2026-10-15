@@ -157,7 +157,8 @@ const generateInitialAttendance = () => {
 
   records.push(
     { id: 'att-1', _id: 'att-1', employee: 'emp-1', date: todayStr, timeIn: '08:45 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Executive morning briefing', location: 'Main Office', createdAt: new Date() },
-    // emp-2 (John Herzsel Datul) is unclocked today awaiting morning shift recording
+    // Naka-time in na rin si John Herzsel Datul ng maaga (on time, within grace period)
+    { id: 'att-2', _id: 'att-2', employee: 'emp-2', date: todayStr, timeIn: '08:52 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Systems architecture review', location: 'Main Office', createdAt: new Date() },
     { id: 'att-3', _id: 'att-3', employee: 'emp-3', date: todayStr, timeIn: '08:58 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Database replication sync', location: 'Main Office', createdAt: new Date() },
     { id: 'att-4', _id: 'att-4', employee: 'emp-4', date: todayStr, timeIn: null, timeOut: null, status: 'On Leave', workHours: 0, lateMinutes: 0, method: 'System Auto', notes: 'Approved Sick Leave (Official Leave of Absence)', location: 'Main Office', createdAt: new Date() },
     { id: 'att-5', _id: 'att-5', employee: 'emp-5', date: todayStr, timeIn: '08:40 AM', timeOut: null, status: 'Present', workHours: 8.25, lateMinutes: 0, method: 'Web Clock-In', notes: 'Automated test suite run', location: 'Main Office', createdAt: new Date() },
