@@ -22,7 +22,7 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   // Empty credentials by default for genuine professional presentation
-  const [form, setForm] = useState({ usernameOrEmail: '', password: '' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +32,7 @@ export default function Login() {
   // Forgot Password Modal State
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState(1); // 1: verify, 2: reset, 3: success
-  const [forgotIdentifier, setForgotIdentifier] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -58,13 +58,31 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const trimmedEmail = (form.email || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedEmail) {
+      setError('Please enter your workplace email address.');
+      return;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('A valid workplace email address is required (e.g. name@company.com). Username-only login is disabled.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(form);
+      await login({
+        email: trimmedEmail,
+        usernameOrEmail: trimmedEmail,
+        password: form.password
+      });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Invalid username or password.');
+      setError(err.message || 'Invalid workplace email or password.');
     } finally {
       setLoading(false);
     }
@@ -74,7 +92,7 @@ export default function Login() {
     setForgotOpen(true);
     setForgotStep(1);
     setForgotError('');
-    setForgotIdentifier(form.usernameOrEmail || '');
+    setForgotEmail(form.email || '');
     setNewPassword('');
     setConfirmPassword('');
     setVerifiedAccount(null);
@@ -83,16 +101,28 @@ export default function Login() {
   const handleVerifyAccount = async (e) => {
     e.preventDefault();
     setForgotError('');
+
+    const trimmedEmail = (forgotEmail || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setForgotError('Please enter a valid workplace email address (e.g. name@company.com).');
+      return;
+    }
+
     setForgotLoading(true);
 
     try {
-      const res = await api.forgotPassword({ emailOrUsername: forgotIdentifier });
+      const res = await api.forgotPassword({
+        email: trimmedEmail,
+        emailOrUsername: trimmedEmail
+      });
       if (res.success) {
         setVerifiedAccount(res);
         setForgotStep(2);
       }
     } catch (err) {
-      setForgotError(err.message || 'No registered account found with that email or username.');
+      setForgotError(err.message || 'No registered account found with that workplace email address.');
     } finally {
       setForgotLoading(false);
     }
@@ -116,7 +146,8 @@ export default function Login() {
 
     try {
       const res = await api.resetPassword({
-        emailOrUsername: verifiedAccount.username || verifiedAccount.email,
+        email: verifiedAccount.email,
+        emailOrUsername: verifiedAccount.email || verifiedAccount.username,
         newPassword
       });
 
@@ -132,7 +163,7 @@ export default function Login() {
 
   const handleFinishReset = () => {
     setForm({
-      usernameOrEmail: verifiedAccount ? verifiedAccount.username : form.usernameOrEmail,
+      email: verifiedAccount ? verifiedAccount.email : form.email,
       password: ''
     });
     setForgotOpen(false);
@@ -243,22 +274,31 @@ export default function Login() {
 
               {/* Clean Professional Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Username or Email Field */}
+                {/* Workplace Email Field */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Username or Workplace Email
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Workplace Email Address
+                    </label>
+                    <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/70">
+                      Email Required
+                    </span>
+                  </div>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
-                      type="text"
+                      type="email"
                       required
-                      value={form.usernameOrEmail}
-                      onChange={(e) => setForm({ ...form, usernameOrEmail: e.target.value })}
-                      placeholder="e.g. ellica or name@company.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="e.g. ellica.onggoco@company.com"
+                      autoComplete="email"
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-slate-900 text-xs placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
                     />
                   </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Enter your registered corporate email (<span className="font-mono text-slate-500">name@company.com</span>). Usernames are disabled.
+                  </p>
                 </div>
 
                 {/* Password Field */}
@@ -353,7 +393,7 @@ export default function Login() {
               </div>
             )}
 
-            {/* STEP 1: VERIFY USERNAME OR EMAIL */}
+            {/* STEP 1: VERIFY WORKPLACE EMAIL */}
             {forgotStep === 1 && (
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-[#39333B] text-[#DFC090] flex items-center justify-center mb-4 shadow-md">
@@ -364,22 +404,22 @@ export default function Login() {
                   Reset Workplace Password
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 mb-6 leading-relaxed">
-                  Enter your registered username or workplace email address to verify your account in the attendance directory.
+                  Enter your registered workplace email address to verify your account in the attendance directory.
                 </p>
 
                 <form onSubmit={handleVerifyAccount} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Username or Workplace Email
+                      Workplace Email Address
                     </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
-                        type="text"
+                        type="email"
                         required
-                        value={forgotIdentifier}
-                        onChange={(e) => setForgotIdentifier(e.target.value)}
-                        placeholder="e.g. ellica or ellica.onggoco@company.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="e.g. ellica.onggoco@company.com"
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39333B]/15 focus:border-[#39333B] transition"
                       />
                     </div>

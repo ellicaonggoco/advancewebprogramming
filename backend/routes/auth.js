@@ -78,7 +78,6 @@ router.post('/register', [
 // @route   POST /api/auth/login
 // @desc    Authenticate user and get token
 router.post('/login', [
-  body('usernameOrEmail').trim().notEmpty().withMessage('Username or Email is required'),
   body('password').notEmpty().withMessage('Password is required'),
 ], async (req, res, next) => {
   try {
@@ -87,17 +86,35 @@ router.post('/login', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { usernameOrEmail, password } = req.body;
-    const searchTarget = usernameOrEmail.toLowerCase();
+    const rawIdentifier = (req.body.email || req.body.usernameOrEmail || '').trim();
+    const { password } = req.body;
 
+    if (!rawIdentifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Workplace email address is required.'
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(rawIdentifier)) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid workplace email address is required to sign in (e.g. name@company.com). Signing in using username only is not permitted.'
+      });
+    }
+
+    const searchTarget = rawIdentifier.toLowerCase();
+
+    // Authenticate strictly by registered workplace email address
     const user = store.users.find(
-      u => u.email.toLowerCase() === searchTarget || u.username.toLowerCase() === searchTarget
+      u => u.email.toLowerCase() === searchTarget
     );
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials. User not found.'
+        message: 'Invalid credentials. No registered account found with that workplace email address.'
       });
     }
 
@@ -199,26 +216,35 @@ router.get('/me', authenticate, (req, res) => {
 
 // @route   POST /api/auth/forgot-password
 // @desc    Verify user identity for password reset
-router.post('/forgot-password', [
-  body('emailOrUsername').trim().notEmpty().withMessage('Email or username is required'),
-], async (req, res, next) => {
+router.post('/forgot-password', async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+    const rawIdentifier = (req.body.email || req.body.emailOrUsername || '').trim();
+
+    if (!rawIdentifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Workplace email address is required.'
+      });
     }
 
-    const { emailOrUsername } = req.body;
-    const target = emailOrUsername.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(rawIdentifier)) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid workplace email address is required (e.g. name@company.com).'
+      });
+    }
+
+    const target = rawIdentifier.toLowerCase();
 
     const user = store.users.find(
-      u => u.email.toLowerCase() === target || u.username.toLowerCase() === target
+      u => u.email.toLowerCase() === target
     );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'No registered institutional account found for that email or username.'
+        message: 'No registered institutional account found with that workplace email address.'
       });
     }
 
@@ -236,7 +262,6 @@ router.post('/forgot-password', [
 // @route   POST /api/auth/reset-password
 // @desc    Update user password
 router.post('/reset-password', [
-  body('emailOrUsername').trim().notEmpty().withMessage('Email or username is required'),
   body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
 ], async (req, res, next) => {
   try {
@@ -245,8 +270,17 @@ router.post('/reset-password', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { emailOrUsername, newPassword } = req.body;
-    const target = emailOrUsername.toLowerCase().trim();
+    const rawIdentifier = (req.body.email || req.body.emailOrUsername || '').trim();
+    const { newPassword } = req.body;
+
+    if (!rawIdentifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Workplace email address is required.'
+      });
+    }
+
+    const target = rawIdentifier.toLowerCase();
 
     const user = store.users.find(
       u => u.email.toLowerCase() === target || u.username.toLowerCase() === target
