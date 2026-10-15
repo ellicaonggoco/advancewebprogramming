@@ -174,11 +174,11 @@ export default function Dashboard() {
 
           <StatCard
             title="Present Today"
-            value={today.present}
+            value={(today.present || 0) + (today.late || 0) + (today.halfDay || 0)}
             subtitle={
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span>On-time shift attendance</span>
+                <span>{today.present || 0} on-time{(today.late || 0) > 0 ? ` • ${today.late} late` : ''}</span>
               </span>
             }
             icon={UserCheck}
@@ -231,11 +231,11 @@ export default function Dashboard() {
 
           <StatCard
             title="Days Present"
-            value={`${stats?.employeeStats?.presentDays ?? 0} Days`}
+            value={`${stats?.employeeStats?.totalPresentDays ?? stats?.employeeStats?.daysWorked ?? ((stats?.employeeStats?.presentDays || 0) + (stats?.employeeStats?.lateDays || 0) + (stats?.employeeStats?.halfDays || 0))} Days`}
             subtitle={
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span>{stats?.employeeStats?.onTimeRate ?? 100}% on-time punctuality</span>
+                <span>{stats?.employeeStats?.presentDays ?? 0} on-time ({stats?.employeeStats?.onTimeRate ?? 100}% punctuality)</span>
               </span>
             }
             icon={UserCheck}

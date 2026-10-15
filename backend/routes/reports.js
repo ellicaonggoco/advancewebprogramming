@@ -84,17 +84,23 @@ router.get('/dashboard-stats', authenticate, (req, res) => {
     const presentDays = monthLogs.filter(r => r.status === 'Present').length;
     const lateDays = monthLogs.filter(r => r.status === 'Late').length;
     const halfDays = monthLogs.filter(r => r.status === 'Half-Day').length;
+    const onLeaveDays = monthLogs.filter(r => r.status === 'On Leave').length;
+    // Total days employee showed up to work: on-time days + late days + half-days
+    const daysWorked = presentDays + lateDays + halfDays;
     const totalWorkingLogs = monthLogs.length;
-    const onTimeRate = totalWorkingLogs > 0 ? Math.round((presentDays / totalWorkingLogs) * 100) : 100;
+    const onTimeRate = daysWorked > 0 ? Math.round((presentDays / daysWorked) * 100) : 100;
 
     const myEmp = store.employees.find(e => e.id === empId || e._id === empId);
 
     employeeStats = {
       shift: myEmp?.shift || '09:00 AM - 06:00 PM',
       leaveBalance: myEmp?.leaveBalance ?? 15,
+      daysWorked,
+      totalPresentDays: daysWorked,
       presentDays,
       lateDays,
       halfDays,
+      onLeaveDays,
       totalWorkingLogs,
       onTimeRate,
       pendingLeaves: empLeaves.filter(l => l.status === 'Pending').length,
