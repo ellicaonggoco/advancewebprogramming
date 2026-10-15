@@ -579,24 +579,17 @@ export default function Employees() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600">
-                      Employee ID
-                    </label>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      Auto-Generated
-                    </span>
-                  </div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                    Employee ID
+                  </label>
                   <input
                     type="text"
                     required
                     readOnly
+                    disabled
                     value={form.employeeId}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 cursor-not-allowed select-none focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-medium text-slate-500 cursor-not-allowed select-none"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    System sequence number ({form.employeeId}) to ensure unique IDs.
-                  </p>
                 </div>
 
                 <div>
@@ -689,21 +682,16 @@ export default function Employees() {
               <div className="grid grid-cols-2 gap-3">
                 {!isEditing ? (
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600">
-                        Roster Status
-                      </label>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Auto-Active
-                      </span>
-                    </div>
-                    <div className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-800 font-medium flex items-center gap-2 cursor-not-allowed select-none">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      <span>Active</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      New employee accounts automatically start as Active.
-                    </p>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                      Roster Status
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value="Active"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-slate-500 cursor-not-allowed select-none"
+                    />
                   </div>
                 ) : (
                   <div>
@@ -724,23 +712,16 @@ export default function Employees() {
 
                 {!isEditing ? (
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600">
-                        Assigned Shift
-                      </label>
-                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                        Auto-Assigned
-                      </span>
-                    </div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                      Assigned Shift
+                    </label>
                     <input
                       type="text"
                       readOnly
-                      value={form.shift}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-slate-800 cursor-not-allowed select-none focus:outline-none"
+                      disabled
+                      value={form.shift || 'Standard (9:00 AM - 5:00 PM)'}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-slate-500 cursor-not-allowed select-none"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      Standard corporate shift schedule (9:00 AM - 5:00 PM).
-                    </p>
                   </div>
                 ) : (
                   <div>
