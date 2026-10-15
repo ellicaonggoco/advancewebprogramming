@@ -36,13 +36,15 @@ const authenticate = async (req, res, next) => {
     const employees = store.getPopulatedEmployees();
     const linkedEmp = employees.find(e => e.id === user.employee || e._id === user.employee);
 
+    const finalAvatar = user.avatar || linkedEmp?.avatar || '';
+
     req.user = {
       id: user.id || user._id,
       username: user.username,
       email: user.email,
       role: user.role,
-      avatar: user.avatar || linkedEmp?.avatar || '',
-      employee: linkedEmp || null,
+      avatar: finalAvatar,
+      employee: linkedEmp ? { ...linkedEmp, avatar: finalAvatar } : null,
       status: user.status
     };
 

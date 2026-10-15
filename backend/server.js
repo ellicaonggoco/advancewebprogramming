@@ -45,8 +45,50 @@ const mongoUri = process.env.MONGODB_URI || defaultMongoUri;
 
 if (mongoUri && mongoUri.trim() !== '') {
   const mongoose = require('mongoose');
-  mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 3000 })
-    .then(() => console.log('🍃 [MongoDB] Connected to database server successfully.'))
+  mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 })
+    .then(async () => {
+      console.log('🍃 [MongoDB] Connected to database server successfully.');
+      try {
+        const store = require('./database/store');
+        const db = mongoose.connection.db;
+
+        // Hydrate users (preserve uploaded avatars, updated passwords, etc.)
+        const mongoUsers = await db.collection('users').find().toArray();
+        if (mongoUsers && mongoUsers.length > 0) {
+          mongoUsers.forEach(mu => {
+            const idx = store.users.findIndex(u => 
+              (u.id && u.id === mu.id) || 
+              (u.username && mu.username && u.username.toLowerCase() === mu.username.toLowerCase())
+            );
+            if (idx >= 0) {
+              store.users[idx] = { ...store.users[idx], ...mu };
+            } else {
+              store.users.push(mu);
+            }
+          });
+          console.log(`🍃 [MongoDB] Hydrated ${mongoUsers.length} users with persistent profiles & avatars.`);
+        }
+
+        // Hydrate employees (preserve uploaded avatars, profiles, new records)
+        const mongoEmps = await db.collection('employees').find().toArray();
+        if (mongoEmps && mongoEmps.length > 0) {
+          mongoEmps.forEach(me => {
+            const idx = store.employees.findIndex(e => 
+              (e.id && e.id === me.id) || 
+              (e.employeeId && me.employeeId && e.employeeId === me.employeeId)
+            );
+            if (idx >= 0) {
+              store.employees[idx] = { ...store.employees[idx], ...me };
+            } else {
+              store.employees.push(me);
+            }
+          });
+          console.log(`🍃 [MongoDB] Hydrated ${mongoEmps.length} employees with persistent profiles & avatars.`);
+        }
+      } catch (hydrateErr) {
+        console.warn('MongoDB hydration warning:', hydrateErr.message);
+      }
+    })
     .catch(err => console.log('⚡ [Data Store] MongoDB offline or unreachable. Active in fast In-Memory Store mode with full 5 collections & sample data ready for presentation!'));
 } else {
   console.log('⚡ [Data Store] Standalone In-Memory Store active with all 5 collections and team members ready for presentation.');

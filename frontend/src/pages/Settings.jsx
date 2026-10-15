@@ -72,7 +72,7 @@ export default function Settings() {
         email: user.email || user.employee?.email || '',
         phone: user.employee?.phone || '+63 917 123 4501',
         bio: user.employee?.bio || 'Workforce member in good standing under institutional compliance.',
-        avatar: user.employee?.avatar || ''
+        avatar: user.avatar || user.employee?.avatar || ''
       });
     }
   }, [user]);
@@ -125,6 +125,9 @@ export default function Settings() {
           });
           if (res.success && res.user) {
             updateUser(res.user);
+            if (user?.username) {
+              localStorage.setItem(`attendance_avatar_${user.username}`, optimizedDataUrl);
+            }
             setProfileSuccess('Profile picture connected and updated across your entire account!');
             setTimeout(() => setProfileSuccess(''), 4000);
           }
@@ -141,6 +144,9 @@ export default function Settings() {
 
   const handleResetAvatar = async () => {
     setProfileForm(prev => ({ ...prev, avatar: '' }));
+    if (user?.username) {
+      localStorage.removeItem(`attendance_avatar_${user.username}`);
+    }
     try {
       setProfileLoading(true);
       const res = await api.updateProfile({
@@ -294,7 +300,7 @@ export default function Settings() {
             >
               <UserAvatar 
                 name={staffName} 
-                avatar={profileForm.avatar || user?.employee?.avatar}
+                avatar={profileForm.avatar || user?.avatar || user?.employee?.avatar}
                 size="2xl" 
                 className="w-24 h-24 text-2xl border-2 border-[#DFC090] shadow-md ring-4 ring-[#DFC090]/15"
               />
@@ -382,7 +388,7 @@ export default function Settings() {
               <div className="flex items-center gap-3.5">
                 <UserAvatar 
                   name={staffName} 
-                  avatar={profileForm.avatar || user?.employee?.avatar} 
+                  avatar={profileForm.avatar || user?.avatar || user?.employee?.avatar} 
                   size="xl" 
                   className="w-14 h-14 text-base border-2 border-[#DFC090] shadow-sm"
                 />

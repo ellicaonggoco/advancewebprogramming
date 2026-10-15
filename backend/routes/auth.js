@@ -55,6 +55,7 @@ router.post('/register', [
 
     const employees = store.getPopulatedEmployees();
     const linkedEmp = employees.find(e => e.id === employeeId || e._id === employeeId);
+    const finalAvatar = newUser.avatar || linkedEmp?.avatar || '';
 
     res.status(201).json({
       success: true,
@@ -65,7 +66,8 @@ router.post('/register', [
         username: newUser.username,
         email: newUser.email,
         role: newUser.role,
-        employee: linkedEmp || null
+        avatar: finalAvatar,
+        employee: linkedEmp ? { ...linkedEmp, avatar: finalAvatar } : null
       }
     });
   } catch (err) {
@@ -114,10 +116,43 @@ router.post('/login', [
       });
     }
 
+    // Sync latest avatar from MongoDB if connected
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const db = mongoose.connection.db;
+        const dbUser = await db.collection('users').findOne({
+          $or: [
+            { username: user.username },
+            { email: user.email },
+            { id: user.id || user._id }
+          ]
+        });
+        if (dbUser && dbUser.avatar) {
+          user.avatar = dbUser.avatar;
+        }
+        if (user.employee) {
+          const dbEmp = await db.collection('employees').findOne({
+            $or: [
+              { id: user.employee },
+              { _id: user.employee }
+            ]
+          });
+          if (dbEmp && dbEmp.avatar) {
+            const empInStore = store.employees.find(e => e.id === user.employee || e._id === user.employee);
+            if (empInStore) empInStore.avatar = dbEmp.avatar;
+          }
+        }
+      } catch (syncErr) {
+        // non-blocking
+      }
+    }
+
     const token = jwt.sign({ id: user.id || user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
     const employees = store.getPopulatedEmployees();
     const linkedEmp = employees.find(e => e.id === user.employee || e._id === user.employee);
+    const finalAvatar = user.avatar || linkedEmp?.avatar || '';
 
     res.json({
       success: true,
@@ -128,7 +163,11 @@ router.post('/login', [
         username: user.username,
         email: user.email,
         role: user.role,
-        employee: linkedEmp || null
+        avatar: finalAvatar,
+        employee: linkedEmp ? {
+          ...linkedEmp,
+          avatar: finalAvatar
+        } : null
       }
     });
   } catch (err) {
@@ -139,9 +178,22 @@ router.post('/login', [
 // @route   GET /api/auth/me
 // @desc    Get currently logged in user profile
 router.get('/me', authenticate, (req, res) => {
+  const employees = store.getPopulatedEmployees();
+  const linkedEmp = employees.find(e => 
+    e.id === req.user.employee?.id || 
+    e._id === req.user.employee?._id || 
+    e.id === req.user.employee || 
+    e._id === req.user.employee
+  );
+  const finalAvatar = req.user.avatar || linkedEmp?.avatar || '';
+
   res.json({
     success: true,
-    user: req.user
+    user: {
+      ...req.user,
+      avatar: finalAvatar,
+      employee: linkedEmp ? { ...linkedEmp, avatar: finalAvatar } : req.user.employee
+    }
   });
 });
 
@@ -269,13 +321,13 @@ const handleProfileUpdate = async (req, res, next) => {
     if (mongoose.connection.readyState === 1) {
       const db = mongoose.connection.db;
       await db.collection('users').updateOne(
-        { $or: [{ id: userId }, { _id: userId }] },
+        { $or: [{ id: userId }, { _id: userId }, { username: user.username }] },
         { $set: { email: user.email, ...(avatar !== undefined ? { avatar } : {}) } }
       ).catch(() => {});
 
       if (updatedEmp) {
         await db.collection('employees').updateOne(
-          { $or: [{ id: updatedEmp.id }, { _id: updatedEmp._id }] },
+          { $or: [{ id: updatedEmp.id }, { _id: updatedEmp._id }, { employeeId: updatedEmp.employeeId }] },
           { $set: updatedEmp }
         ).catch(() => {});
       }
