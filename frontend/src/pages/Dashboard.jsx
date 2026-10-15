@@ -5,9 +5,13 @@ import {
   Clock, 
   CalendarOff, 
   ChevronRight,
-  Calendar
+  Calendar,
+  ShieldCheck,
+  X,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getLocalDateString } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import TimeClockWidget from '../components/TimeClockWidget';
@@ -18,18 +22,64 @@ import { Link } from 'react-router-dom';
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const [stats, setStats] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Overtime Mandate State (Admin Quick Action)
+  const [otModalOpen, setOtModalOpen] = useState(false);
+  const [otForm, setOtForm] = useState({
+    employeeId: '',
+    reason: 'Approved Operational Duty / Project Sprint',
+    allEmployees: false,
+    maxHours: 4
+  });
+  const [otLoading, setOtLoading] = useState(false);
+  const [otSuccess, setOtSuccess] = useState('');
+  const [otError, setOtError] = useState('');
 
   const loadDashboardData = async () => {
     try {
-      const res = await api.getDashboardStats();
+      const [res, empRes] = await Promise.all([
+        api.getDashboardStats(),
+        api.getEmployees().catch(() => ({ success: false }))
+      ]);
+
       if (res.success) {
         setStats(res.stats);
+      }
+      if (empRes?.success && empRes.data) {
+        setEmployees(empRes.data);
       }
     } catch (err) {
       console.error('Failed to load dashboard statistics:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAuthorizeOt = async (e) => {
+    e.preventDefault();
+    setOtLoading(true);
+    setOtError('');
+    setOtSuccess('');
+    try {
+      const res = await api.authorizeOvertime({
+        employeeId: otForm.allEmployees ? null : otForm.employeeId,
+        allEmployees: otForm.allEmployees,
+        date: getLocalDateString(new Date()),
+        reason: otForm.reason,
+        maxHours: otForm.maxHours
+      });
+      setOtSuccess(res.message);
+      await loadDashboardData();
+      setTimeout(() => {
+        setOtModalOpen(false);
+        setOtSuccess('');
+      }, 1200);
+    } catch (err) {
+      setOtError(err.message || 'Failed to authorize overtime');
+    } finally {
+      setOtLoading(false);
     }
   };
 
@@ -73,6 +123,25 @@ export default function Dashboard() {
         {/* Quick Actions (Admin only) */}
         {isAdmin && (
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                setOtForm({
+                  employeeId: employees[0]?.id || employees[0]?._id || '',
+                  reason: 'Approved Operational Duty / Project Sprint',
+                  allEmployees: false,
+                  maxHours: 4
+                });
+                setOtError('');
+                setOtSuccess('');
+                setOtModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+              title="Admin: Mandate and authorize employee for overtime duty"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-zinc-950" />
+              <span>Authorize Overtime</span>
+            </button>
+
             <Link
               to="/employees"
               className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#463C4A] text-white text-xs font-medium shadow-sm transition flex items-center gap-1.5"
@@ -490,6 +559,125 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Admin Overtime Authorization Modal */}
+      {isAdmin && otModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-zinc-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900">Authorize Staff Overtime</h3>
+                  <p className="text-[11px] text-zinc-500">Official permission for employee overtime duty today</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setOtModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 p-1.5 rounded-lg hover:bg-zinc-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {otSuccess && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{otSuccess}</span>
+              </div>
+            )}
+
+            {otError && (
+              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{otError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAuthorizeOt} className="space-y-4">
+              <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-950 space-y-1">
+                <p className="font-semibold text-amber-900 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                  Pahintulot ng Administrasyon (Admin Mandate Required)
+                </p>
+                <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                  Bawal mag-clock in para sa Overtime ang sinumang kawani nang walang pahintulot. Ang pag-authorize dito ang magbubukas ng yellow "Record Overtime In" button sa kanilang dashboard.
+                </p>
+              </div>
+
+              {!otForm.allEmployees && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                    Select Staff Member
+                  </label>
+                  <select
+                    value={otForm.employeeId}
+                    onChange={(e) => setOtForm({ ...otForm, employeeId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:bg-white"
+                  >
+                    {employees.map(emp => (
+                      <option key={emp.id || emp._id} value={emp.id || emp._id}>
+                        {emp.employeeId} — {emp.firstName} {emp.lastName} ({emp.department?.name || 'Staff'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                  Overtime Project Mandate / Reason
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={otForm.reason}
+                  onChange={(e) => setOtForm({ ...otForm, reason: e.target.value })}
+                  placeholder="e.g. Critical release sprint, weekend operational support..."
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:bg-white"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-xs space-y-1.5">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={otForm.allEmployees}
+                    onChange={(e) => setOtForm({ ...otForm, allEmployees: e.target.checked })}
+                    className="rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="font-semibold text-zinc-800">Mandate Overtime for Entire Workforce Today</span>
+                </label>
+                <p className="text-[11px] text-zinc-500 pl-5">
+                  {otForm.allEmployees 
+                    ? 'Lahat ng empleyado sa buong kumpanya ay mabibigyan ng pahintulot na mag-overtime ngayong araw.'
+                    : 'Tanging ang napiling staff member lamang ang mabibigyan ng pahintulot.'}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setOtModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={otLoading}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-950" />
+                  <span>{otLoading ? 'Authorizing...' : 'Grant Overtime Authorization'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -197,12 +197,13 @@ router.post('/clock-in', authenticate, (req, res) => {
     }
 
     // MANDATORY OVERTIME PERMISSION CHECK:
-    // Employee cannot clock in for Overtime unless authorized/mandated by an Administrator for today
+    // Administrator is inherently authorized; regular employees strictly require Admin authorization
     if (!store.overtimeAuthorizations) {
       store.overtimeAuthorizations = [];
     }
 
-    const hasAuth = store.overtimeAuthorizations.find(a => 
+    const isUserAdmin = req.user.role === 'admin';
+    const hasAuth = isUserAdmin || store.overtimeAuthorizations.find(a => 
       (a.employee === targetEmpId || a.employeeId === targetEmpId || a.allEmployees === true) &&
       a.date === today &&
       a.status === 'Authorized'

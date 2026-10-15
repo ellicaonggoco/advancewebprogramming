@@ -280,60 +280,17 @@ export default function TimeClockWidget({ onClockEvent }) {
                   )}
                 </div>
 
-                {/* Overtime Actions (Permitted by Admin Only) */}
+                {/* Overtime Actions */}
                 {!todayOtRecord?.timeIn ? (
-                  /* User can Clock In for Overtime ONLY IF AUTHORIZED by Admin */
-                  !otAuth ? (
-                    /* Locked State: Requires Admin Authorization */
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/90 border border-amber-500/30 text-left max-w-md w-full shadow-lg">
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400 mt-0.5">
-                          <Lock className="w-3.5 h-3.5" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-amber-300">
-                            Overtime: Admin Authorization Required
-                          </div>
-                          <div className="text-[10px] text-zinc-400 mt-0.5">
-                            Bawal mag-OT nang walang pahintulot. Overtime duty must be authorized by an Administrator before clocking in.
-                          </div>
-                        </div>
-                      </div>
-
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => setConfirmModal({ open: true, type: 'authorizeOt' })}
-                          disabled={loading}
-                          className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-zinc-950 text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5 text-zinc-950 stroke-[2.2]" />
-                          <span>Authorize OT (Admin)</span>
-                        </button>
-                      ) : (
-                        <div className="px-3 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700/80 text-[10px] text-zinc-400 font-medium flex items-center justify-center shrink-0">
-                          <span>Pending Admin Mandate</span>
+                  /* Admin can clock in for Overtime directly. Regular employees require admin mandate */
+                  isAdmin || otAuth ? (
+                    <div className="flex flex-col items-stretch sm:items-end gap-2.5 w-full sm:w-auto">
+                      {!isAdmin && otAuth && (
+                        <div className="flex items-center gap-1.5 text-xs text-amber-300 justify-end">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>OT Mandate Active • Authorized by <strong className="text-white">{otAuth.authorizedBy || 'Admin'}</strong></span>
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    /* Unlocked State: Authorized by Admin! */
-                    <div className="flex flex-col items-stretch sm:items-end gap-2.5 w-full sm:w-auto">
-                      <div className="flex items-center gap-2 text-xs text-amber-300 justify-end">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>OT Permitted by <strong className="text-white">{otAuth.authorizedBy || 'Admin'}</strong></span>
-                        {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={executeRevokeOt}
-                            disabled={loading}
-                            className="text-[10px] text-zinc-400 hover:text-red-400 underline ml-1 cursor-pointer"
-                            title="Revoke Overtime Authorization"
-                          >
-                            Revoke
-                          </button>
-                        )}
-                      </div>
 
                       <button
                         onClick={() => setConfirmModal({ open: true, type: 'clockInOt' })}
@@ -352,6 +309,21 @@ export default function TimeClockWidget({ onClockEvent }) {
                           </div>
                         </div>
                       </button>
+                    </div>
+                  ) : (
+                    /* Locked state for regular employees whose OT is not authorized yet */
+                    <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-zinc-900/90 border border-zinc-700/80 text-left max-w-sm shadow-md">
+                      <div className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400">
+                        <Lock className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-zinc-200">
+                          Overtime Requires Admin Mandate
+                        </div>
+                        <div className="text-[10px] text-zinc-400 mt-0.5">
+                          Overtime duty must be authorized by an Administrator before clocking in.
+                        </div>
+                      </div>
                     </div>
                   )
                 ) : !todayOtRecord?.timeOut ? (
@@ -413,19 +385,6 @@ export default function TimeClockWidget({ onClockEvent }) {
           </div>
 
           <div className="flex items-center gap-4">
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setConfirmModal({ open: true, type: 'reset' })}
-                disabled={loading}
-                className="text-zinc-500 hover:text-zinc-300 text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5"
-                title="Admin: Reset Test Punch (Testing Mode)"
-              >
-                <RotateCcw className="w-3 h-3 text-zinc-500" />
-                <span>Reset Test Punch (Admin)</span>
-              </button>
-            )}
-
             <Link
               to="/attendance?tab=adjustments&action=new"
               className="text-[#DFC090] hover:text-[#f3ddb8] font-semibold text-xs inline-flex items-center gap-1.5 transition hover:underline cursor-pointer"
@@ -700,125 +659,6 @@ export default function TimeClockWidget({ onClockEvent }) {
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>{loading ? 'Confirming...' : 'Yes, Confirm OT Time-Out'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 5. Admin Authorize Overtime Duty Modal */}
-            {confirmModal.type === 'authorizeOt' && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-5 h-5 text-amber-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-zinc-900">Authorize Overtime Duty</h3>
-                    <p className="text-xs text-zinc-500">Administrator Work Mandate & Approval</p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/80 space-y-1.5 text-xs text-amber-950">
-                  <p className="font-semibold text-amber-900">
-                    Mandatory Overtime Authorization Policy:
-                  </p>
-                  <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                    Ayon sa labor and timekeeping policy, hindi maaaring mag-clock in para sa Overtime ang empleyado nang walang opisyal na pahintulot mula sa Administrator upang maiwasan ang unapproved overtime expenses.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                    Overtime Mandate / Project Reason
-                  </label>
-                  <input
-                    type="text"
-                    value={authReason}
-                    onChange={(e) => setAuthReason(e.target.value)}
-                    placeholder="e.g. Server migration sprint, inventory audit, urgent release..."
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:bg-white"
-                  />
-                </div>
-
-                <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-xs space-y-1.5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={authAllWorkforce}
-                      onChange={(e) => setAuthAllWorkforce(e.target.checked)}
-                      className="rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
-                    />
-                    <span className="font-medium text-zinc-800">Authorize for Entire Department / Workforce Today</span>
-                  </label>
-                  <p className="text-[11px] text-zinc-500 pl-5">
-                    {authAllWorkforce
-                      ? 'Lahat ng empleyado ay mabibigyan ng pahintulot na mag-overtime ngayong araw.'
-                      : `Tanging si ${user?.employee ? `${user.employee.firstName} ${user.employee.lastName}` : user?.username} lamang ang mabibigyan ng pahintulot mag-overtime.`}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmModal({ open: false, type: null })}
-                    className="px-4 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium transition cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={executeAuthorizeOt}
-                    disabled={loading}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-zinc-950" />
-                    <span>{loading ? 'Authorizing...' : 'Grant Overtime Authorization'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 6. Administrative Reset Test Punch Modal (Admin Only) */}
-            {confirmModal.type === 'reset' && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                    <ShieldAlert className="w-5 h-5 text-amber-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-zinc-900">Reset Test Punch</h3>
-                    <p className="text-xs text-zinc-500">Administrator Testing & Verification Tool</p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 space-y-2">
-                  <p className="font-semibold text-amber-950">
-                    ⚠️ Paalala para sa Administrator:
-                  </p>
-                  <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                    Ang function na ito ay eksklusibo para sa Administrator upang ma-clear ang test punch ngayong araw para sa system evaluation at testing.
-                  </p>
-                  <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                    Sa regular na operasyon ng kumpanya, ang mga shift ay <strong>permanenteng naka-save</strong> at Overtime (OT) punch-in ang ginagamit para sa karagdagang oras.
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmModal({ open: false, type: null })}
-                    className="px-4 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium transition cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={executeResetToday}
-                    disabled={loading}
-                    className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shadow-sm transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>{loading ? 'Resetting...' : 'Confirm Reset'}</span>
                   </button>
                 </div>
               </div>
