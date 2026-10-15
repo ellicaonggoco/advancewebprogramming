@@ -143,9 +143,10 @@ export default function Attendance() {
     workHours: 8.25
   });
 
-  const loadData = async () => {
+  // silent = true: background refresh na walang loading spinner para hindi nagfa-flash ang table
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [attRes, deptRes, empRes, leaveRes, otRes] = await Promise.all([
         api.getAttendance(),
         api.getDepartments(),
@@ -162,7 +163,7 @@ export default function Attendance() {
     } catch (err) {
       console.error('Failed to load attendance data:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -195,6 +196,16 @@ export default function Attendance() {
 
   useEffect(() => {
     loadData();
+
+    // Auto-refresh: para kapag may nag-time in/out sa ibang device o browser,
+    // lalabas agad dito sa records (every 10 seconds + pag bumalik sa tab)
+    const interval = setInterval(() => loadData(true), 10000);
+    const onFocus = () => loadData(true);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const handleTimeChange = (field, value) => {
