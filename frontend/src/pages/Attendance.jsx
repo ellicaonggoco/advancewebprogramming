@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Search, 
@@ -32,6 +33,46 @@ import UserAvatar from '../components/UserAvatar';
 import AttendanceCalendar from '../components/AttendanceCalendar';
 import { exportToCsv } from '../utils/exportCsv';
 import { generatePdfDocument } from '../utils/exportPdf';
+
+const parseTimeStringToMinutes = (str) => {
+  if (!str || typeof str !== 'string') return null;
+  const cleaned = str.trim();
+  if (!cleaned) return null;
+
+  const match12 = cleaned.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([aApP][mM])?$/);
+  if (match12) {
+    let hours = parseInt(match12[1], 10);
+    const minutes = parseInt(match12[2], 10);
+    const modifier = match12[3] ? match12[3].toUpperCase() : null;
+
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  }
+  return null;
+};
+
+const calculateWorkHours = (timeInStr, timeOutStr) => {
+  const inMins = parseTimeStringToMinutes(timeInStr);
+  const outMins = parseTimeStringToMinutes(timeOutStr);
+  if (inMins === null || outMins === null) return null;
+
+  let diff = outMins - inMins;
+  if (diff < 0) {
+    diff += 24 * 60; // Overnight shift
+  }
+  return Number((diff / 60).toFixed(2));
+};
+
+const calculateLateMinutes = (timeInStr) => {
+  const inMins = parseTimeStringToMinutes(timeInStr);
+  if (inMins === null) return 0;
+  const standardStartMinutes = 9 * 60; // 9:00 AM
+  if (inMins > standardStartMinutes + 5) {
+    return inMins - standardStartMinutes;
+  }
+  return 0;
+};
 
 export default function Attendance() {
   const { user, isAdmin } = useAuth();
@@ -156,18 +197,52 @@ export default function Attendance() {
     loadData();
   }, []);
 
+  const handleTimeChange = (field, value) => {
+    const nextForm = { ...form, [field]: value };
+    const inTime = field === 'timeIn' ? value : form.timeIn;
+    const outTime = field === 'timeOut' ? value : form.timeOut;
+
+    const computed = calculateWorkHours(inTime, outTime);
+    if (computed !== null) {
+      nextForm.workHours = computed;
+      if (computed < 4 && computed > 0 && (nextForm.status === 'Present' || nextForm.status === 'Late')) {
+        nextForm.status = 'Half-Day';
+      } else if (computed >= 4 && nextForm.status === 'Half-Day') {
+        const late = calculateLateMinutes(inTime);
+        nextForm.status = late > 0 ? 'Late' : 'Present';
+      }
+    }
+    if (field === 'timeIn' && inTime) {
+      const late = calculateLateMinutes(inTime);
+      nextForm.lateMinutes = late;
+      if (nextForm.status !== 'Half-Day') {
+        if (late > 0 && nextForm.status === 'Present') {
+          nextForm.status = 'Late';
+        } else if (late === 0 && nextForm.status === 'Late') {
+          nextForm.status = 'Present';
+        }
+      }
+    }
+    setForm(nextForm);
+  };
+
   const openAddModal = () => {
     setIsEditing(false);
     setEditId(null);
+    const initialTimeIn = '08:50 AM';
+    const initialTimeOut = '05:05 PM';
+    const computedHours = calculateWorkHours(initialTimeIn, initialTimeOut) || 8.25;
+    const computedLate = calculateLateMinutes(initialTimeIn);
+
     setForm({
       employee: employees[0]?.id || employees[0]?._id || '',
       date: getLocalDateString(new Date()),
-      timeIn: '08:50 AM',
-      timeOut: '05:05 PM',
-      status: 'Present',
+      timeIn: initialTimeIn,
+      timeOut: initialTimeOut,
+      status: computedLate > 0 ? 'Late' : 'Present',
       notes: '',
-      lateMinutes: 0,
-      workHours: 8.25
+      lateMinutes: computedLate,
+      workHours: computedHours
     });
     setFormError('');
     setModalOpen(true);
@@ -176,6 +251,10 @@ export default function Attendance() {
   const openEditModal = (rec) => {
     setIsEditing(true);
     setEditId(rec.id || rec._id);
+    let workH = rec.workHours;
+    if ((!workH || workH === 0) && rec.timeIn && rec.timeOut) {
+      workH = calculateWorkHours(rec.timeIn, rec.timeOut) || 0;
+    }
     setForm({
       employee: rec.employee?.id || rec.employee?._id || '',
       date: rec.date,
@@ -184,7 +263,7 @@ export default function Attendance() {
       status: rec.status,
       notes: rec.notes || '',
       lateMinutes: rec.lateMinutes || 0,
-      workHours: rec.workHours || 0
+      workHours: workH ?? 0
     });
     setFormError('');
     setModalOpen(true);
@@ -245,6 +324,18 @@ export default function Attendance() {
   useEffect(() => {
     loadAdjustments();
   }, [adjStatusFilter]);
+
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    if (modalOpen || adjModalOpen || reviewAdjModal.open || otMandateModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [modalOpen, adjModalOpen, reviewAdjModal.open, otMandateModalOpen]);
 
   // Synchronize URL search parameters (e.g. from TimeClockWidget or Dashboard links)
   useEffect(() => {
@@ -1058,7 +1149,7 @@ export default function Attendance() {
       )}
 
       {/* Modal */}
-      {modalOpen && (
+      {modalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/50 backdrop-blur-xs">
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-zinc-200 relative">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
@@ -1143,7 +1234,7 @@ export default function Attendance() {
                     type="text"
                     placeholder="08:50 AM"
                     value={form.timeIn}
-                    onChange={(e) => setForm({ ...form, timeIn: e.target.value })}
+                    onChange={(e) => handleTimeChange('timeIn', e.target.value)}
                     className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-mono"
                   />
                 </div>
@@ -1156,7 +1247,7 @@ export default function Attendance() {
                     type="text"
                     placeholder="05:00 PM"
                     value={form.timeOut}
-                    onChange={(e) => setForm({ ...form, timeOut: e.target.value })}
+                    onChange={(e) => handleTimeChange('timeOut', e.target.value)}
                     className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-mono"
                   />
                 </div>
@@ -1169,7 +1260,7 @@ export default function Attendance() {
                   </label>
                   <input
                     type="number"
-                    step="0.1"
+                    step="any"
                     min="0"
                     placeholder="e.g. 8.0"
                     value={form.workHours}
@@ -1246,11 +1337,12 @@ export default function Attendance() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Apply Adjustment Modal */}
-      {adjModalOpen && (
+      {adjModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-zinc-200 relative text-left">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
@@ -1375,11 +1467,12 @@ export default function Attendance() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Review Adjustment Modal (Admin) */}
-      {reviewAdjModal.open && reviewAdjModal.adj && (
+      {reviewAdjModal.open && reviewAdjModal.adj && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-zinc-200 relative text-left">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
@@ -1455,11 +1548,12 @@ export default function Attendance() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Authorize Overtime Duty Modal (Admin Only) */}
-      {otMandateModalOpen && (
+      {otMandateModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-zinc-200 relative text-left">
             <button
@@ -1636,7 +1730,8 @@ export default function Attendance() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
