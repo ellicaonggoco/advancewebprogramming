@@ -158,7 +158,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
 
   return (
     <>
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 h-screen sticky top-0">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 h-full">
         {content}
       </aside>
 

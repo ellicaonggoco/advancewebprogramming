@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Users, 
@@ -75,6 +76,17 @@ export default function Employees() {
       return () => clearTimeout(timer);
     }
   }, [successToast]);
+
+  useEffect(() => {
+    if (modalOpen || profileModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [modalOpen, profileModal]);
 
   // View drawer
   const [profileModal, setProfileModal] = useState(false);
@@ -628,7 +640,7 @@ export default function Employees() {
       </div>
 
       {/* Add / Edit Modal */}
-      {modalOpen && (
+      {modalOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -967,11 +979,12 @@ export default function Employees() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Profile Drawer */}
-      {profileModal && selectedEmp && (
+      {profileModal && selectedEmp && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -1031,7 +1044,8 @@ export default function Employees() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
