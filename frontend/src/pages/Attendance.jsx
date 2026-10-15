@@ -1168,7 +1168,18 @@ export default function Attendance() {
                     min="0"
                     placeholder="e.g. 8.0"
                     value={form.workHours}
-                    onChange={(e) => setForm({ ...form, workHours: e.target.value })}
+                    onFocus={(e) => {
+                      if (form.workHours === 0 || form.workHours === '0') {
+                        setForm({ ...form, workHours: '' });
+                      } else {
+                        e.target.select();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const cleaned = val === '' ? '' : val.replace(/^0+(?=\d)/, '');
+                      setForm({ ...form, workHours: cleaned });
+                    }}
                     className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
@@ -1182,7 +1193,18 @@ export default function Attendance() {
                     min="0"
                     placeholder="0"
                     value={form.lateMinutes}
-                    onChange={(e) => setForm({ ...form, lateMinutes: e.target.value })}
+                    onFocus={(e) => {
+                      if (form.lateMinutes === 0 || form.lateMinutes === '0') {
+                        setForm({ ...form, lateMinutes: '' });
+                      } else {
+                        e.target.select();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const cleaned = val === '' ? '' : val.replace(/^0+(?=\d)/, '');
+                      setForm({ ...form, lateMinutes: cleaned });
+                    }}
                     className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>

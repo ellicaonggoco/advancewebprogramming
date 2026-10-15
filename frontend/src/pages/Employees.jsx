@@ -667,7 +667,18 @@ export default function Employees() {
                     min="0"
                     placeholder="e.g. 50000"
                     value={form.salary}
-                    onChange={(e) => setForm({ ...form, salary: e.target.value })}
+                    onFocus={(e) => {
+                      if (form.salary === 0 || form.salary === '0') {
+                        setForm({ ...form, salary: '' });
+                      } else {
+                        e.target.select();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const cleaned = val === '' ? '' : val.replace(/^0+(?=\d)/, '');
+                      setForm({ ...form, salary: cleaned });
+                    }}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                   />
                 </div>

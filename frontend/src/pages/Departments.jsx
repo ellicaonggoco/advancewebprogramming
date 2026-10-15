@@ -314,7 +314,18 @@ export default function Departments() {
                     min="0"
                     placeholder="e.g. 300000"
                     value={form.budget}
-                    onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                    onFocus={(e) => {
+                      if (form.budget === 0 || form.budget === '0') {
+                        setForm({ ...form, budget: '' });
+                      } else {
+                        e.target.select();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const cleaned = val === '' ? '' : val.replace(/^0+(?=\d)/, '');
+                      setForm({ ...form, budget: cleaned });
+                    }}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50/70 border border-slate-200 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
