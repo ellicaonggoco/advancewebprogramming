@@ -65,6 +65,16 @@ export default function Employees() {
   const [editId, setEditId] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [successToast, setSuccessToast] = useState(null);
+
+  useEffect(() => {
+    if (successToast) {
+      const timer = setTimeout(() => {
+        setSuccessToast(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [successToast]);
 
   // View drawer
   const [profileModal, setProfileModal] = useState(false);
@@ -182,7 +192,7 @@ export default function Employees() {
           return;
         }
         if (!form.password || form.password.length < 6) {
-          setFormError('Account password must be at least 6 characters long.');
+          setFormError(`Password requirement not met: minimum 6 characters required (currently ${form.password ? form.password.length : 0}/6).`);
           setFormLoading(false);
           return;
         }
@@ -195,12 +205,31 @@ export default function Employees() {
         salary: form.salary === '' ? 0 : parseFloat(form.salary) || 0
       };
 
+      const fullName = `${form.firstName} ${form.lastName}`.trim();
+      const empId = form.employeeId;
+
       if (isEditing) {
         await api.updateEmployee(editId, payload);
+        setSuccessToast({
+          title: 'Staff Profile Updated Successfully!',
+          message: `Employee "${fullName}" (${empId}) details have been successfully updated.`,
+          employeeId: empId
+        });
       } else {
         await api.createEmployee(payload);
+        setSuccessToast({
+          title: 'Employee Registered Successfully!',
+          message: `Employee account "${fullName}" (${empId}) has been created and verified. Added to the Employee Directory.`,
+          employeeId: empId
+        });
       }
+
+      // Close modal and return directly to employee directory
       setModalOpen(false);
+      setSearch('');
+      setSelectedDept('All');
+      setSelectedStatus('All');
+      setCurrentPage(1);
       await loadData();
     } catch (err) {
       setFormError(err.message || 'Operation failed');
@@ -280,7 +309,34 @@ export default function Employees() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto relative">
+      {/* Floating Success Validation Toast */}
+      {successToast && (
+        <div className="fixed top-6 right-6 z-[100] max-w-md w-[calc(100%-3rem)] bg-white rounded-2xl shadow-2xl border border-emerald-200/90 p-4 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="flex items-start gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold text-slate-900 text-xs">{successToast.title}</h4>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-[10px] font-bold">
+                  {successToast.employeeId}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">{successToast.message}</p>
+            </div>
+            <button
+              onClick={() => setSuccessToast(null)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer transition shrink-0"
+              title="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -320,6 +376,27 @@ export default function Employees() {
           )}
         </div>
       </div>
+
+      {/* Directory Confirmation Banner */}
+      {successToast && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 shadow-xs flex items-center justify-between gap-3 text-xs text-emerald-900 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold">{successToast.title}: </span>
+              <span className="text-emerald-800">{successToast.message}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setSuccessToast(null)}
+            className="p-1 rounded-lg text-emerald-600 hover:text-emerald-900 hover:bg-emerald-100/60 cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3">
@@ -785,6 +862,7 @@ export default function Employees() {
                             <input
                               type={showPassword ? 'text' : 'password'}
                               required={form.createAccount}
+                              minLength={6}
                               value={form.password}
                               onChange={(e) => setForm({ ...form, password: e.target.value })}
                               placeholder="Min 6 characters"
@@ -829,6 +907,13 @@ export default function Employees() {
                 </div>
               )}
 
+              {formError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -840,9 +925,12 @@ export default function Employees() {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#463C4A] text-white text-xs font-medium shadow-sm transition cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-[#39333B] hover:bg-[#463C4A] text-white text-xs font-medium shadow-sm transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  {formLoading ? 'Saving...' : isEditing ? 'Save Changes' : 'Confirm Registration'}
+                  {formLoading && (
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  )}
+                  <span>{formLoading ? (isEditing ? 'Saving...' : 'Confirming Registration...') : isEditing ? 'Save Changes' : 'Confirm Registration'}</span>
                 </button>
               </div>
             </form>
