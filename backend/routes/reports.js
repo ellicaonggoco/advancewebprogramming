@@ -8,6 +8,34 @@ const getTodayString = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const parseTimeToMinutes = (str) => {
+  if (!str) return 0;
+  try {
+    const [time, modifier] = str.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  } catch {
+    return 0;
+  }
+};
+
+const calculateRecordHours = (r) => {
+  if (!r || r.status === 'On Leave') return 0;
+  if (r.workHours && r.workHours > 0) return r.workHours;
+  if (r.timeIn && r.timeOut) {
+    const inMin = parseTimeToMinutes(r.timeIn);
+    const outMin = parseTimeToMinutes(r.timeOut);
+    return Number((Math.max(0, outMin - inMin) / 60).toFixed(2));
+  }
+  if (r.timeIn && !r.timeOut) {
+    const lateDed = (r.lateMinutes || 0) / 60;
+    return Math.max(1.0, Number((8.25 - lateDed).toFixed(2)));
+  }
+  return 0;
+};
+
 // @route   GET /api/reports/dashboard-stats
 // @desc    Comprehensive dashboard KPI stats
 router.get('/dashboard-stats', authenticate, (req, res) => {
@@ -130,7 +158,7 @@ router.get('/monthly-summary', authenticate, (req, res) => {
     const lateDays = records.filter(r => r.status === 'Late').length;
     const halfDays = records.filter(r => r.status === 'Half-Day').length;
     const onLeaveDays = records.filter(r => r.status === 'On Leave').length;
-    const totalHours = records.reduce((sum, r) => sum + (r.workHours || 0), 0);
+    const totalHours = records.reduce((sum, r) => sum + calculateRecordHours(r), 0);
     const totalLateMinutes = records.reduce((sum, r) => sum + (r.lateMinutes || 0), 0);
     const daysWorked = presentDays + lateDays + halfDays;
 
@@ -184,7 +212,7 @@ router.get('/department-analytics', authenticate, (req, res) => {
     const deptEmpIds = deptEmployees.map(e => e.id);
 
     const deptAttendance = attendanceRecords.filter(a => deptEmpIds.includes(a.employee));
-    const totalHours = deptAttendance.reduce((sum, a) => sum + (a.workHours || 0), 0);
+    const totalHours = deptAttendance.reduce((sum, a) => sum + calculateRecordHours(a), 0);
     const presentCount = deptAttendance.filter(a => a.status === 'Present').length;
     const lateCount = deptAttendance.filter(a => a.status === 'Late').length;
 
